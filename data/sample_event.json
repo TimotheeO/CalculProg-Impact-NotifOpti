@@ -1,0 +1,27 @@
+{
+  "participants": [
+    {"id": "p1", "name": "Alice"},
+    {"id": "p2", "name": "Bruno"},
+    {"id": "p3", "name": "Chloe"},
+    {"id": "p4", "name": "David"},
+    {"id": "p5", "name": "Emma"}
+  ],
+  "workshops": [
+    {"id": "w1", "name": "Atelier Cuisine"},
+    {"id": "w2", "name": "Atelier Dégustation (dépend de la Cuisine)"},
+    {"id": "w3", "name": "Atelier Poterie"},
+    {"id": "w4", "name": "Atelier Vernissage (dépend de la Poterie)"}
+  ],
+  "enrollments": [
+    {"participant_id": "p1", "workshop_id": "w1"},
+    {"participant_id": "p2", "workshop_id": "w1"},
+    {"participant_id": "p2", "workshop_id": "w2"},
+    {"participant_id": "p3", "workshop_id": "w2"},
+    {"participant_id": "p4", "workshop_id": "w3"},
+    {"participant_id": "p5", "workshop_id": "w4"}
+  ],
+  "dependencies": [
+    {"base_workshop_id": "w1", "dependent_workshop_id": "w2"},
+    {"base_workshop_id": "w3", "dependent_workshop_id": "w4"}
+  ]
+}

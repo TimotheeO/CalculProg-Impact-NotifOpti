@@ -1,22 +1,3 @@
-"""
-Modélisation du graphe de dépendances pour l'événement.
-
-Domaine : coordination logistique d'un événement à plusieurs ateliers.
-
-Nœuds du graphe :
-- Participant (une personne)
-- Workshop (un atelier / sous-groupe)
-
-Arêtes :
-- "enrolled_in" : un Participant est inscrit à un Workshop
-- "depends_on"  : un Workshop dépend d'un autre Workshop
-  (ex : l'atelier B ne peut pas se tenir si l'atelier A change,
-  parce que les mêmes intervenants/salle sont utilisés)
-
-Ce module fournit une structure de graphe simple, suffisante pour
-implémenter ensuite un parcours BFS/DFS (Tâche 3).
-"""
-
 from dataclasses import dataclass, field
 
 

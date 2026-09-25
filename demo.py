@@ -1,6 +1,8 @@
 import sys
+
 from src.data_loader import load_event_graph
 from src.impact import compute_impacted_set
+
 
 def main():
     if len(sys.argv) != 2:

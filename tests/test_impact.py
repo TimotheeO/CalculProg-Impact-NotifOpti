@@ -1,7 +1,9 @@
 import time
+
 from src.data_loader import load_event_graph
 from src.graph import EventGraph
 from src.impact import compute_impacted_set
+
 
 def test_no_impact_when_no_dependency():
     graph = EventGraph()

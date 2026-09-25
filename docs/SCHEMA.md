@@ -4,7 +4,7 @@
 
 L'événement est modélisé comme un **graphe** :
 
-- **Nœuds** :
+- **Noeuds** :
   - `Participant` — une personne inscrite à l'événement
   - `Workshop` — un atelier / sous-groupe de l'événement
 - **Arêtes** :

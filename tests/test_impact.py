@@ -1,7 +1,7 @@
+import time
 from src.data_loader import load_event_graph
 from src.graph import EventGraph
 from src.impact import compute_impacted_set
-
 
 def test_no_impact_when_no_dependency():
     graph = EventGraph()
@@ -75,6 +75,32 @@ def test_unknown_workshop_raises():
         assert False, "devrait lever ValueError"
     except ValueError:
         pass
+
+
+def test_large_graph_performance_and_correctness():
+    """
+    Gros graphe (perf basique) : une chaîne de 300 ateliers, chacun avec
+    1 participant. Vérifie que le résultat est correct (les 300 ateliers
+    et 300 participants sont bien impactés en cascade) ET que l'algorithme
+    reste rapide (pas de comportement quadratique caché).
+    """
+    graph = EventGraph()
+    n = 300
+    for i in range(n):
+        graph.add_workshop(f"w{i}", f"w{i}")
+        graph.add_participant(f"p{i}", f"p{i}")
+        graph.enroll(f"p{i}", f"w{i}")
+        if i > 0:
+            graph.add_dependency(f"w{i - 1}", f"w{i}")
+
+    start = time.perf_counter()
+    result = compute_impacted_set(graph, "w0")
+    elapsed = time.perf_counter() - start
+
+    assert len(result.impacted_workshop_ids) == n
+    assert len(result.impacted_participant_ids) == n
+    # Seuil volontairement large (test de non-régression, pas un benchmark strict)
+    assert elapsed < 1.0
 
 
 def test_on_sample_event_dataset():

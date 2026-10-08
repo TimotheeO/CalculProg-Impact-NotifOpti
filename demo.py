@@ -1,45 +1,48 @@
-import sys
+"""
+Démo : montre concrètement que la file de priorité fait sortir les
+notifications les plus urgentes en premier, peu importe l'ordre d'ajout.
 
-from src.data_loader import load_event_graph
-from src.impact import compute_impacted_set
+Usage :
+    python3 demo_notifications.py
+"""
+
+from src.notifications import Notification, NotificationQueue, Urgency
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage : python3 demo.py <id_atelier>")
-        print("Exemples disponibles : w1 (Cuisine), w3 (Poterie)")
-        sys.exit(1)
+    queue = NotificationQueue()
 
-    workshop_id = sys.argv[1]
-    graph = load_event_graph("data/sample_event.json")
+    # On ajoute volontairement dans le DÉSORDRE (info mineure en premier)
+    # pour bien montrer que l'ORDRE D'AJOUT n'est pas l'ordre de sortie.
+    to_add = [
+        Notification("p5", "w4", "Nouvelle photo ajoutée à l'album", Urgency.INFO_MINEURE),
+        Notification("p1", "w1", "Atelier Cuisine ANNULÉ", Urgency.ANNULATION),
+        Notification("p4", "w3", "Horaire de Poterie décalé de 30min", Urgency.CHANGEMENT_HORAIRE),
+        Notification("p2", "w1", "Rappel : apportez votre tablier", Urgency.INFO_MINEURE),
+        Notification("p3", "w2", "Atelier Dégustation ANNULÉ", Urgency.ANNULATION),
+    ]
 
-    if workshop_id not in graph.workshops:
-        print(f"Atelier inconnu : {workshop_id}")
-        print(f"Ateliers disponibles : {', '.join(graph.workshops.keys())}")
-        sys.exit(1)
-
-    workshop_name = graph.workshops[workshop_id].name
-    result = compute_impacted_set(graph, workshop_id)
-
-    print("=" * 50)
-    print(f"CHANGEMENT SUR : {workshop_name} ({workshop_id})")
-    print("=" * 50)
-
-    print(f"\nAteliers impactés en cascade ({len(result.impacted_workshop_ids)}) :")
-    for w_id in sorted(result.impacted_workshop_ids):
-        marker = "  <- point de départ" if w_id == workshop_id else "  <- impacté en cascade"
-        print(f"  - {graph.workshops[w_id].name} ({w_id}){marker}")
-
-    print(f"\nParticipants à notifier ({len(result.impacted_participant_ids)}) :")
-    for p_id in sorted(result.impacted_participant_ids):
-        print(f"  - {graph.participants[p_id].name}")
-
-    not_notified = set(graph.participants.keys()) - result.impacted_participant_ids
-    print(f"\nParticipants NON notifiés, à raison ({len(not_notified)}) :")
-    for p_id in sorted(not_notified):
-        print(f"  - {graph.participants[p_id].name}")
+    print("=" * 60)
+    print("ORDRE D'AJOUT DANS LA FILE (volontairement mélangé) :")
+    print("=" * 60)
+    for n in to_add:
+        print(f"  [{n.urgency.name:20}] {n.message}")
+        queue.push(n)
 
     print()
+    print("=" * 60)
+    print("ORDRE RÉEL DE SORTIE (le plus urgent en premier) :")
+    print("=" * 60)
+    position = 1
+    while not queue.is_empty():
+        n = queue.pop_next()
+        print(f"  {position}. [{n.urgency.name:20}] {n.message}")
+        position += 1
+
+    print()
+    print("-> Les 2 ANNULATION sortent en premier (dans leur ordre d'ajout),")
+    print("   puis le CHANGEMENT_HORAIRE, puis les 2 INFO_MINEURE en dernier.")
+
 
 if __name__ == "__main__":
     main()

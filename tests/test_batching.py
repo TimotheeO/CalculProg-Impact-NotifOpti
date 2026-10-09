@@ -168,3 +168,33 @@ def test_unknown_workshop_is_rejected(sample_graph, clock):
 def test_negative_window_is_rejected(sample_graph):
     with pytest.raises(ValueError):
         ChangeBatcher(sample_graph, window_seconds=-1)
+
+
+def test_next_flush_time_is_none_when_nothing_is_pending(sample_graph, clock):
+    batcher = ChangeBatcher(sample_graph, window_seconds=30, clock=clock)
+
+    assert batcher.next_flush_time() is None
+
+
+def test_next_flush_time_is_the_earliest_group_plus_the_window(sample_graph, clock):
+    batcher = ChangeBatcher(sample_graph, window_seconds=30, clock=clock)
+    clock.advance(3)
+    batcher.register_change("w1", "horaire", "15h", Urgency.CHANGEMENT_HORAIRE)
+    clock.advance(7)
+    batcher.register_change("w3", "horaire", "10h", Urgency.CHANGEMENT_HORAIRE)
+
+    assert batcher.next_flush_time() == 33  # groupe de w1 : 3 + 30
+    clock.advance_to(33)
+    assert len(batcher.flush_ready()) == 3  # Alice, Bruno, Chloe
+    assert batcher.next_flush_time() == 40  # groupe de w3 : 10 + 30
+
+
+def test_flush_is_exact_at_the_deadline_even_with_decimal_times(sample_graph, clock):
+    """0.1 + 0.3 n'est pas exactement 0.4 en flottants : la fenêtre doit quand même être prête."""
+    batcher = ChangeBatcher(sample_graph, window_seconds=0.3, clock=clock)
+    clock.advance_to(0.1)
+    batcher.register_change("w1", "horaire", "15h", Urgency.CHANGEMENT_HORAIRE)
+
+    clock.advance_to(batcher.next_flush_time())
+
+    assert len(batcher.flush_ready()) == 3

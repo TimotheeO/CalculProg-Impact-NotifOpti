@@ -1,32 +1,3 @@
-"""
-Regroupement (batching / debouncing) des changements rapprochés.
-
-Problème : si l'organisateur change 3 fois l'horaire d'un atelier en 2 minutes,
-chaque participant ne doit PAS recevoir 3 notifications (dont 2 déjà fausses),
-mais UNE seule, cohérente, qui reflète l'état final.
-
-Fonctionnement :
-    1. `register_change` calcule les personnes impactées (BFS de la Tâche 3) et
-       les met "en attente" dans un groupe, UN groupe par participant.
-    2. Tant que la fenêtre de regroupement n'est pas écoulée, les nouveaux
-       changements qui touchent le même participant sont FUSIONNÉS dans son
-       groupe (détection des redondances : même participant = même groupe).
-    3. `flush_ready` produit une seule `Notification` par groupe dont la fenêtre
-       est écoulée.
-
-Règles de fusion (ce qui rend la notification "cohérente") :
-    - Même atelier + même champ modifié plusieurs fois : la DERNIÈRE valeur gagne
-      (horaire 15h puis 16h => on n'annonce que 16h).
-    - Un atelier annulé : l'annulation rend caduques ses autres changements
-      (inutile d'annoncer "horaire décalé" pour un atelier qui n'a plus lieu).
-    - L'urgence finale est la plus haute parmi les changements restants.
-
-Politique de fenêtre : fixe, démarrée au PREMIER changement du groupe (batching).
-Alternative "debounce pur" (fenêtre relancée à chaque changement) : plus de
-fusion, mais une notification qui pourrait être retardée indéfiniment si les
-changements ne s'arrêtent jamais. La fenêtre fixe borne le délai maximal.
-"""
-
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -108,13 +79,19 @@ class ChangeBatcher:
         )
         return impacted_count
 
+    def next_flush_time(self) -> float | None:
+        """Heure à laquelle le prochain groupe sera prêt (None si rien n'est en attente)."""
+        if not self._pending:
+            return None
+        return min(group.opened_at for group in self._pending.values()) + self._window
+
     def flush_ready(self) -> list[Notification]:
         """Produit les notifications des groupes dont la fenêtre est écoulée."""
         now = self._clock()
         ready_ids = [
             participant_id
             for participant_id, group in self._pending.items()
-            if now - group.opened_at >= self._window
+            if now >= group.opened_at + self._window
         ]
         return self._flush(ready_ids)
 

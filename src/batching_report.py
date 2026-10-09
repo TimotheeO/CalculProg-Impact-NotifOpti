@@ -1,5 +1,3 @@
-"""Affichage texte de la fusion des changements (Tâche 7) : avant / après."""
-
 from collections.abc import Sequence
 
 from src.batching import ChangeBatcher
@@ -23,3 +21,13 @@ def render_batching_report(batcher: ChangeBatcher, notifications: Sequence[Notif
         f" ({batcher.notifications_saved} évitées)"
     )
     return "\n".join(lines)
+
+
+def render_emissions(emissions: Sequence[tuple[float, Sequence[Notification]]]) -> str:
+    """Quand les groupes fusionnés ont été émis (fin de leur fenêtre de regroupement)."""
+    if not emissions:
+        return "Aucune émission."
+    return "\n".join(
+        f"  t={moment:6.1f}s : {len(notifications)} notification(s) émise(s)"
+        for moment, notifications in emissions
+    )

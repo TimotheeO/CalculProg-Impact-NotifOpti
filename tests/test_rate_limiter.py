@@ -62,3 +62,21 @@ def test_independent_checker_detects_violations():
 
     assert max_in_any_window(burst, period=1.0) == 4
     assert max_in_any_window([0.0, 1.0, 2.0], period=1.0) == 1  # bien espacés
+
+
+def test_available_at_is_now_when_a_slot_is_free(clock):
+    limiter = RateLimiter(max_per_period=2, period_seconds=1.0, clock=clock)
+    clock.advance(5)
+
+    assert limiter.available_at() == 5
+
+
+def test_available_at_gives_the_absolute_time_when_blocked(clock):
+    limiter = RateLimiter(max_per_period=1, period_seconds=2.0, clock=clock)
+    clock.advance(1)
+    limiter.try_acquire()  # envoi à t = 1
+    clock.advance(0.5)  # t = 1,5
+
+    assert limiter.available_at() == 3.0  # 1 + 2
+    clock.advance_to(limiter.available_at())
+    assert limiter.try_acquire()  # sauter exactement à cette heure suffit

@@ -1,5 +1,3 @@
-"""Fixtures partagées : chaque test qui les demande en argument les reçoit automatiquement."""
-
 import pytest
 
 from src.clock import SimulatedClock

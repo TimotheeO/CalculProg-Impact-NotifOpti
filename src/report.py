@@ -1,12 +1,3 @@
-"""
-Affichages texte du débit (tests visuels et démos) + vérificateur indépendant.
-
-`max_in_any_window` est volontairement SÉPARÉ du RateLimiter : il recompte les
-envois à partir de leurs horodatages, sans rien savoir du limiteur. Si le
-limiteur avait un bug, ce vérificateur le détecterait. C'est ce qui donne de la
-valeur au test "la limite n'est jamais dépassée".
-"""
-
 from collections import Counter
 from collections.abc import Sequence
 
@@ -41,9 +32,21 @@ def render_send_histogram(sent: Sequence[SentNotification], limit: int, period: 
     verdict = "OK" if observed <= limit else "LIMITE DÉPASSÉE"
 
     lines = [f"Débit : {len(sent)} notifications, limite {limit} par {period:g}s (t = secondes depuis le 1er envoi)"]
-    for bucket in range(max(buckets) + 1):
+    last = max(buckets)
+    bucket = 0
+    while bucket <= last:
         count = buckets.get(bucket, 0)
+        if count == 0:
+            run_end = bucket
+            while run_end < last and buckets.get(run_end + 1, 0) == 0:
+                run_end += 1
+            run = run_end - bucket + 1
+            if run >= 3:  # longue pause : une seule ligne au lieu de `run` lignes vides
+                lines.append(f"  t={bucket * period:6.1f}s │ ... {run} tranches sans envoi")
+                bucket = run_end + 1
+                continue
         lines.append(f"  t={bucket * period:6.1f}s │ {_BAR * count} {count}/{limit}")
+        bucket += 1
     lines.append(f"  Maximum observé sur une fenêtre : {observed} (limite {limit}) -> {verdict}")
     return "\n".join(lines)
 

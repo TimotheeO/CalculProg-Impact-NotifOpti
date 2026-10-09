@@ -1,14 +1,3 @@
-"""
-Dispatcher : relie la file de priorité (Tâche 5) et le limiteur de débit (Tâche 6).
-
-Règle : on envoie TOUJOURS la notification la plus urgente en premier, mais
-seulement quand le limiteur de débit l'autorise. Si le débit est atteint, on
-attend (sleep) le temps nécessaire, puis on reprend.
-
-L'envoi réel (SMS / email / push) est simulé : `send_fn` est une fonction
-qu'on peut remplacer par un vrai appel d'API sans toucher au reste du code.
-"""
-
 import time
 from collections.abc import Callable
 from dataclasses import dataclass

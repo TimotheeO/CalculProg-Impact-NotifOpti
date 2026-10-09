@@ -1,11 +1,3 @@
-"""
-Démo de la chaîne complète : regroupement des changements -> file de priorité
--> envoi limité en débit. Le temps est SIMULÉ : la démo est instantanée.
-
-Usage :
-    python3 demo_pipeline.py
-"""
-
 from src.batching import ChangeBatcher
 from src.batching_report import render_batching_report
 from src.clock import SimulatedClock

@@ -1,11 +1,3 @@
-"""
-Démo : montre concrètement que la file de priorité fait sortir les
-notifications les plus urgentes en premier, peu importe l'ordre d'ajout.
-
-Usage :
-    python3 demo_notifications.py
-"""
-
 from src.notifications import Notification, NotificationQueue, Urgency
 
 

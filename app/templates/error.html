@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}{{ status }} — ImpactFlow{% endblock %}
+{% block content %}<section class="hero"><p class="eyebrow">{{ status }}</p><h1>{{ message }}</h1><a class="button" href="{{ url_for('catalog') }}">Revenir aux événements</a></section>{% endblock %}

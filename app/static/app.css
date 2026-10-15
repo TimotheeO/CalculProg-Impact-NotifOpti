@@ -1,0 +1,49 @@
+:root { color-scheme: light; --bg:#f7f5f1; --card:#fff; --text:#242124; --muted:#70696d; --line:#e6e1df; --accent:#79364b; --soft:#f4e9ed; --accent-text:#79364b; }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#171619; --card:#211f23; --text:#f4f0eb; --muted:#b4aab0; --line:#3c353d; --accent:#a75c74; --soft:#382730; --accent-text:#e3adc0; }
+* { box-sizing:border-box; }
+body { margin:0; font:15px/1.6 "Segoe UI",system-ui,sans-serif; color:var(--text); background:var(--bg); }
+a { color:inherit; text-decoration:none; }
+button { font:inherit; cursor:pointer; }
+:focus-visible { outline:3px solid var(--accent-text); outline-offset:5px; }
+.skip { position:absolute; top:-100px; left:20px; padding:10px; background:var(--card); }
+.skip:focus { top:10px; }
+.header { max-width:1120px; margin:auto; padding:26px 30px; display:flex; justify-content:space-between; align-items:center; gap:20px; }
+.brand { display:flex; align-items:center; gap:10px; font-size:23px; font-weight:700; letter-spacing:-.9px; }
+.brand-mark { display:grid; place-items:center; width:35px; height:35px; color:#fff; background:#79364b; border-radius:11px; font-size:26px; }
+.header-actions { display:flex; align-items:center; gap:25px; font-size:12px; }
+#theme-toggle { height:37px; width:37px; border:1px solid var(--line); border-radius:10px; color:var(--text); background:var(--card); font-size:22px; }
+main { max-width:1060px; margin:0 auto; padding:10px 30px 70px; min-height:calc(100vh - 180px); }
+.hero { padding:60px 0 55px; }
+.eyebrow { font-size:10px; font-weight:700; letter-spacing:2px; color:var(--accent-text); margin:0 0 20px; }
+h1 { font-size:clamp(34px,5.2vw,57px); line-height:1.12; font-weight:650; letter-spacing:-2px; margin:0 0 22px; max-width:850px; }
+.intro { color:var(--muted); max-width:600px; font-size:15px; margin:0; }
+h2 { font-size:20px; letter-spacing:-.5px; font-weight:650; }
+h3 { font-size:17px; margin:0 0 8px; }
+.section-head { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:20px; }
+.section-head h2 { margin:0; }
+.count { color:var(--muted); font-size:12px; }
+.event-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:22px; }
+.card { padding:30px; border:1px solid var(--line); border-radius:16px; background:var(--card); overflow-wrap:anywhere; }
+.card h2 { margin:20px 0 10px; }
+.card p { color:var(--muted); font-size:13px; }
+.tag { display:inline-block; padding:5px 10px; background:var(--soft); color:var(--accent-text); border-radius:20px; font-size:10px; font-weight:600; }
+dl { margin:25px 0; font-size:12px; }
+dl div { display:flex; gap:20px; margin:10px 0; }
+dt { min-width:45px; color:var(--muted); }
+dd { margin:0; }
+.button { display:inline-flex; align-items:center; justify-content:center; gap:23px; min-height:43px; border-radius:9px; padding:11px 17px; background:var(--accent); color:#fff; font-size:12px; font-weight:600; }
+.button:hover { filter:brightness(1.1); }
+.empty { padding:45px; text-align:center; }
+.empty h2 { margin-top:10px; }
+.empty-mark { font-size:32px; color:var(--accent-text); }
+footer { max-width:1060px; padding:20px 30px 28px; margin:auto; display:flex; justify-content:space-between; gap:20px; color:var(--muted); font-size:10px; border-top:1px solid var(--line); }
+.back { display:inline-block; font-size:12px; color:var(--muted); padding-top:30px; }
+.hero.detail { margin-top:24px; margin-bottom:32px; padding:35px; border:1px solid var(--line); border-radius:17px; background:var(--soft); }
+.detail h1 { font-size:clamp(32px,4.5vw,47px); }
+.event-meta { display:flex; flex-wrap:wrap; gap:12px 30px; font-size:12px; margin-top:25px; }
+.workshops { display:grid; gap:13px; }
+.workshop { display:flex; justify-content:space-between; gap:25px; padding:23px; }
+.workshop p { margin:4px 0; }
+.workshop-meta { display:flex; flex-direction:column; gap:6px; text-align:right; font-size:12px; color:var(--muted); }
+.schedule { font-size:11px !important; }
+@media (max-width:600px) { .header { padding:22px 20px; } .header-actions { gap:14px; } .brand { font-size:20px; } main { padding:0 20px 45px; } .hero { padding:40px 0; } h1 { letter-spacing:-1.1px; } .card { padding:23px; } .empty { padding:30px 20px; } .hero.detail { padding:25px; } .workshop { flex-direction:column; gap:10px; } .workshop-meta { text-align:left; } footer { flex-direction:column; gap:7px; padding:20px; } }

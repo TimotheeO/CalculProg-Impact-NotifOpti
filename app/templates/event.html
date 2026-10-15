@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.name }} — ImpactFlow{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('catalog') }}">← Tous les événements</a>
+<section class="hero detail"><p class="eyebrow">UNE RENCONTRE À PARTAGER</p><h1>{{ event.name }}</h1><p class="intro">{{ event.description }}</p><div class="event-meta"><span>{{ event.starts_at | paris_date }}</span><span>{{ event.location }}</span></div></section>
+<section aria-labelledby="program-title"><div class="section-head"><h2 id="program-title">Au programme</h2><span class="count">{{ workshops | length }} atelier{{ 's' if workshops | length > 1 else '' }}</span></div>
+{% if workshops %}<div class="workshops">{% for workshop in workshops %}<article class="card workshop"><div><h3>{{ workshop.name }}</h3><p>{{ workshop.description }}</p><p class="schedule">{{ workshop.starts_at | paris_date }} — {{ workshop.ends_at | paris_date }}</p></div><div class="workshop-meta"><span>{{ workshop.location }}</span><span>{{ 'Capacité libre' if workshop.capacity is none else 'Capacité : ' ~ workshop.capacity }}</span></div></article>{% endfor %}</div>{% else %}<div class="card empty"><h3>Le programme se prépare.</h3><p>Les ateliers seront annoncés prochainement.</p></div>{% endif %}
+</section>
+{% endblock %}

@@ -1,2 +1,11 @@
-pytest>=7.0
-ruff>=0.5
+-c constraints.txt
+
+pytest==9.1.1
+ruff==0.16.9
+fastapi==0.143.1
+uvicorn==0.54.0
+Jinja2==3.1.6
+SQLAlchemy==2.0.54
+alembic==1.20.0
+httpx2==2.13.1
+python-dotenv==1.2.4

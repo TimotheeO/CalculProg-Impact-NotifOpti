@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Des événements à partager, des informations qui vous concernent. Découvrez ImpactFlow.">
+  <title>{% block title %}ImpactFlow — Les prochaines rencontres{% endblock %}</title>
+  <script src="{{ url_for('static', path='theme.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+</head>
+<body>
+  <a class="skip" href="#main">Aller au contenu</a>
+  <header class="header"><a class="brand" href="{{ url_for('catalog') }}"><span class="brand-mark" aria-hidden="true">↳</span>ImpactFlow</a><div class="header-actions"><a href="{{ url_for('catalog') }}">Les événements</a><button type="button" id="theme-toggle" aria-label="Changer de thème">◐</button></div></header>
+  <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
+  <footer><span>ImpactFlow · Les bonnes personnes, au bon moment.</span><span>Horaires affichés à l’heure de Paris.</span></footer>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero"><p class="eyebrow">SE RETROUVER. CRÉER. PARTAGER.</p><h1>La prochaine rencontre<br>commence ici.</h1><p class="intro">Découvrez les événements ouverts et trouvez celui qui vous ressemble.</p></section>
+<section aria-labelledby="catalog-title"><div class="section-head"><h2 id="catalog-title">À découvrir</h2><span class="count">{{ events | length }} événement{{ 's' if events | length > 1 else '' }}</span></div>
+{% if events %}<div class="event-grid">{% for event in events %}<article class="card"><span class="tag">Ouvert aux demandes</span><h2>{{ event.name }}</h2><p>{{ event.description }}</p><dl><div><dt>Quand</dt><dd>{{ event.starts_at | paris_date }}</dd></div><div><dt>Où</dt><dd>{{ event.location }}</dd></div></dl><a class="button" href="{{ url_for('event_detail', slug=event.slug) }}">Découvrir l’événement <span aria-hidden="true">→</span></a></article>{% endfor %}</div>
+{% else %}<div class="card empty"><span class="empty-mark" aria-hidden="true">✦</span><h2>Les prochaines rencontres se préparent.</h2><p>Aucun événement ouvert n’est disponible pour le moment. Revenez bientôt.</p></div>{% endif %}
+</section>
+{% endblock %}

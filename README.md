@@ -2,6 +2,20 @@
 
 Projet Simulated (Epitech Mobile). Python, sans dépendance d'exécution : `pytest` et `ruff` ne servent qu'au développement.
 
+## Reprise ImpactFlow — application web en préparation
+
+Le moteur et la CLI décrits ci-dessous sont fonctionnels. La reprise vise un
+site FastAPI/Jinja2 avec base persistante et véritables e-mails ; ces fonctions
+ne sont pas encore implémentées.
+
+Les premiers livrables C1-01 sont disponibles : [règles produit](docs/PRODUCT.md),
+[scénario de démonstration](docs/SCENARIO_DEMO.md) et
+[trois maquettes interactives](docs/maquettes/index.html).
+Ouvrir `docs/maquettes/index.html` dans un navigateur, sans installation.
+Les [instructions et captures](docs/maquettes/README.md) expliquent les parcours,
+la palette et les limites. Les actions de ces maquettes utilisent des données
+fictives en mémoire et n’envoient aucun e-mail.
+
 ## Le problème
 
 Dans un événement avec plusieurs ateliers, quand l'organisateur change un horaire, une salle ou annule un atelier, il faut prévenir **uniquement les personnes réellement concernées**, dans le **bon ordre**, **sans dépasser le débit** de l'API d'envoi, et **sans envoyer trois messages contradictoires** si l'organisateur change trois fois d'avis en deux minutes.

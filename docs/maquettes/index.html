@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="description" content="Maquettes interactives d’ImpactFlow : organiser, rejoindre et suivre un événement.">
+    <title>ImpactFlow — Les Rencontres créatives</title>
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('impactflow-theme') ||
+          (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Aller au contenu</a>
+    <div class="prototype-bar">
+      <span><span class="prototype-dot"></span> Maquette interactive <span class="prototype-detail">· données fictives, aucun e-mail envoyé</span></span>
+      <nav aria-label="Parcours des maquettes" class="preview-nav">
+        <a href="#organisateur">Organisation</a>
+        <a href="#invitation">Invitation</a>
+        <a href="#participant">Mon espace</a>
+      </nav>
+      <button type="button" class="reset-button" id="reset">Réinitialiser</button>
+    </div>
+    <div id="app"></div>
+    <div id="feedback" class="toast" role="status" aria-live="polite"></div>
+    <dialog id="change-dialog" aria-labelledby="dialog-title"></dialog>
+    <noscript><p>Active JavaScript pour parcourir ces maquettes. Les règles et le scénario sont également disponibles dans les documents du dépôt.</p></noscript>
+  </body>
+</html>

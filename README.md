@@ -1,12 +1,34 @@
 # Propagation d'impact et notification optimisée
 
-Projet Simulated (Epitech Mobile). Python, sans dépendance d'exécution : `pytest` et `ruff` ne servent qu'au développement.
+Projet Simulated (Epitech Mobile), en Python. Le moteur et sa CLI utilisent la
+bibliothèque standard ; l’application web utilise FastAPI, Jinja2 et SQLAlchemy.
 
-## Reprise ImpactFlow — application web en préparation
+## Reprise ImpactFlow — fondation web C1-02
 
-Le moteur et la CLI décrits ci-dessous sont fonctionnels. La reprise vise un
-site FastAPI/Jinja2 avec base persistante et véritables e-mails ; ces fonctions
-ne sont pas encore implémentées.
+Le moteur et la CLI décrits ci-dessous sont fonctionnels. La fondation web
+ajoute une base SQLite persistante, des migrations, des fixtures sur deux
+événements et le chargement du graphe depuis la base. Le catalogue et le
+programme des événements ouverts sont servis par FastAPI/Jinja2, avec les thèmes
+clair/nuit. Connexion, administration et véritables e-mails restent à développer.
+
+Après installation, lancer depuis la racine du dépôt :
+
+```bash
+python -m app.cli init-db
+python -m app.cli seed-demo          # facultatif, données fictives sur base vide
+python -m uvicorn app.main:app --reload
+```
+
+Ouvrir <http://127.0.0.1:8000>. La base est conservée dans
+`var/impactflow.sqlite3`, ignoré par Git. `GET /health` vérifie l’accès à la base.
+Le seed est relançable sans écraser les données. Aucun e-mail n’est envoyé.
+Voir [le guide de développement](docs/DEVELOPPEMENT.md) pour les commandes,
+le schéma, les erreurs et la vérification de persistance.
+
+Pour vérifier toi-même l’avancement, suivre la
+[recette manuelle par tâche](docs/RECETTE_MANUELLE.md).
+Le [journal des choix techniques](docs/DECISIONS_TECHNIQUES.md) compare les
+alternatives et propose les justifications à expliquer à la soutenance.
 
 Les premiers livrables C1-01 sont disponibles : [règles produit](docs/PRODUCT.md),
 [scénario de démonstration](docs/SCENARIO_DEMO.md) et
@@ -33,11 +55,11 @@ L'envoi réel (SMS, email, push) est **simulé** : `send_fn` est un point d'exte
 
 ## Installation
 
-Python 3.10 ou plus (testé en 3.12).
+Python **3.12** pour l’application web et l’environnement vérifié par la CI.
 
 ```bash
-git clone https://github.com/TimotheeO/NOM_DU_REPO.git
-cd NOM_DU_REPO
+git clone https://github.com/TimotheeO/CalculProg-Impact-NotifOpti.git
+cd CalculProg-Impact-NotifOpti
 python3 -m venv venv
 source venv/bin/activate        # sous Windows : le script activate de venv/Scripts
 pip install -r requirements.txt
@@ -91,7 +113,7 @@ Bilan : 11 notifications sans fusion -> 5 émises (6 évitées)
 ### 2. Lancer les tests
 
 ```bash
-python3 -m pytest        # 92 tests, avec affichages visuels
+python3 -m pytest        # moteur historique + tests web, avec affichages visuels
 ruff check .             # style du code (contrôlé aussi par la CI)
 ```
 
@@ -146,7 +168,11 @@ Choix principaux :
 
 ## Tests
 
-92 tests, un fichier par module :
+Vérification de C1-02 : **178 tests réussis** (92 historiques + 86 nouveaux),
+Ruff et `pip check` sans erreur. Les tests web couvrent persistance entre processus,
+contraintes SQL, isolation, graphe, autorisations du service local et erreurs HTTP.
+
+Les 92 tests historiques restent présents, un fichier par module :
 
 | Fichier | Tests | Couvre |
 |---|---|---|

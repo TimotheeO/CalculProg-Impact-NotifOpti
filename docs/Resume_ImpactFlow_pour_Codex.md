@@ -6,6 +6,12 @@ Synthèse initiale de la discussion « Recréer le PDF proprement », complété
 
 Les règles produit consolidées sont dans [PRODUCT.md](PRODUCT.md). Ce document intègre les réponses de l’étudiant et prévaut sur les formulations historiques ci-dessous en cas d’écart.
 
+### Préférences de travail à conserver
+
+- L’étudiant doit pouvoir expliquer les choix au jury et les comparer à d’autres possibilités. Pour chaque décision significative, actualiser [DECISIONS_TECHNIQUES.md](DECISIONS_TECHNIQUES.md) avec provenance, alternatives, avantages/limites, explication orale et preuve ; ne pas inventer de benchmark.
+- À la fin de chaque tâche, indiquer comment vérifier soi-même l’avancement : commandes, actions à l’écran, résultats attendus et erreurs pertinentes. Actualiser [RECETTE_MANUELLE.md](RECETTE_MANUELLE.md), qui couvre déjà C1-01 et C1-02 ; isoler les données pour les essais modifiants.
+- Ces préférences sont également enregistrées dans AGENTS.md à la racine du dépôt, pour les prochaines reprises.
+
 - Développement individuel les jeudis/vendredis ; soutenances confirmées les 23 octobre et 6 novembre 2026 ; dépôt Hub effectué.
 - Audit : 92 tests réussis, Ruff sans erreur, commit local et distant `53a39b9`, dernière CI réussie. Le site et les e-mails réels ne sont pas encore implémentés.
 - Import GitHub confirmé : 19 tâches de reprise, toutes Todo au moment de l’audit, lot Reprise octobre 2026, 4 jours par cycle. Ne pas relancer un import pour les recréer.
@@ -26,7 +32,20 @@ Les règles produit consolidées sont dans [PRODUCT.md](PRODUCT.md). Ce document
 - Un nouveau [SCENARIO_DEMO.md](SCENARIO_DEMO.md) a été rédigé ; il ne provient pas des fichiers annoncés dans l’ancien échange.
 - Les réponses et changements des maquettes restent en mémoire ; seul le thème est mémorisé. Aucun compte, base SQL ou envoi réel n’a été implémenté par ces écrans.
 - Vérification : 26 contrôles navigateur réussis, aucune exception JavaScript ; 92 tests Python réussis et Ruff sans erreur. Captures dans docs/maquettes/apercus/.
-- Livrables disponibles localement pour revue, sans publication, push ou modification des statuts GitHub. Prochaine tâche de développement : C1-02, FastAPI/Jinja2 et base persistante.
+- C1-01 a été enregistré dans les commits locaux `2af9335` (documentation) et `fb33a2a` (maquettes). Le push est laissé à l’étudiant et les statuts GitHub n’ont pas été modifiés par l’assistant.
+
+### Fondation persistante C1-02
+
+- Application dans app/, FastAPI/Jinja2, catalogue et programme des événements publiés ouverts, thèmes clair/nuit et route /health. Aucun accès aux événements privés ou données personnelles via ces pages.
+- SQLite sur disque dans var/impactflow.sqlite3, SQLAlchemy et première migration Alembic 0001 ; configuration .env.example et bases/secrets ignorés par Git.
+- Schéma des comptes, contacts, événements/coorganisateurs, ateliers/dépendances, invitations/réponses, demandes, participations/inscriptions, changements et liens vers les notifications.
+- load_graph(session, event_id) reconstruit le graphe depuis les participations confirmées et inscriptions actives ; BFS historique réutilisé sans modification de src/.
+- Commandes python -m app.cli : init-db, seed-demo, inspect et set-workshop-location pour vérifier état courant et historique après relancement. Cette dernière est une commande locale de vérification, pas un endpoint authentifié.
+- Fixtures déterministes : deux événements, Alex commun aux deux, diamant/cascade, branche épargnée, atelier indépendant, multi-inscription, refus et attente exclus. Alice est déjà confirmée dans le seed, contrairement à l’état initial de la maquette.
+- Contrôles : 178 tests réussis (92 historiques + 86 nouveaux), avertissements traités comme erreurs, Ruff et pip check sans erreur ; 11 contrôles du vrai serveur dans Chrome réussis, sans exception JavaScript.
+- Les tests vérifient notamment l’isolation SQL, les droits métier du service local, les transactions annulées en erreur, les pages 404/500/503 sans fuite et la conservation des données entre processus.
+- Versions directes et transitives fixées ; CI configurée pour tous les tests. Résultat de CI distante à vérifier après push ; ne pas confondre avec la vérification locale.
+- Guide : [DEVELOPPEMENT.md](DEVELOPPEMENT.md). Connexion, formulaires admin, envoi réel et reprise des groupes ne sont pas encore implémentés. Prochaine tâche : C1-03, avec dépendance fournisseur C1-07 à préparer.
 
 ## Contexte et objectif
 

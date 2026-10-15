@@ -18,9 +18,12 @@ Un nouveau [SCENARIO_DEMO.md](SCENARIO_DEMO.md) a été rédigé le 15 octobre �
 des règles confirmées ; il ne s’agit pas du document de l’ancien échange.
 Ne pas demander la récupération des autres fichiers comme préalable au développement.
 
-Le moteur Python et la CLI existent. Audit du 15 octobre : 92 tests réussis,
-Ruff sans erreur, commit local et distant `53a39b9`, dernière CI réussie.
-Le site, la base SQL, les comptes et les e-mails réels restent à développer.
+Le moteur Python et la CLI existent. Audit initial du 15 octobre : 92 tests
+réussis, Ruff sans erreur, commit local et distant `53a39b9`, dernière CI réussie.
+Depuis, C1-01 a livré les maquettes et C1-02 a ajouté FastAPI/Jinja2, la base
+SQLite versionnée, les fixtures et le chargement du graphe. Vérification locale :
+178 tests réussis et Ruff sans erreur. Connexion, administration et e-mails réels
+restent à développer ; voir [DEVELOPPEMENT.md](DEVELOPPEMENT.md) pour le périmètre exact.
 Les 19 tâches de reprise sont importées, toutes en Todo lors de l’audit.
 L’ancienne tâche 8 est terminée selon l’étudiant ; son statut Verification est
 un oubli de suivi. Aucune modification GitHub n’a été effectuée pendant l’audit.
@@ -234,6 +237,7 @@ vidéo de secours et v1.0. Hébergement seulement si une offre gratuite convient
 - Scénario des maquettes et recette visée : [SCENARIO_DEMO.md](SCENARIO_DEMO.md).
 - Captures et contrôles navigateur : voir le compte rendu des maquettes.
 
-Ces livrables sont disponibles localement pour revue ; le statut GitHub n’a pas
-été modifié et ils n’ont pas été publiés ou poussés. Les fonctionnalités décrites
-restent à développer et à vérifier côté serveur selon les critères des issues.
+Ces livrables ont été enregistrés dans les commits locaux `2af9335` et `fb33a2a`.
+Le statut GitHub n’a pas été modifié par l’assistant. Les fonctionnalités décrites
+restent à développer et à vérifier selon les critères des issues ; C1-02 fournit
+désormais leur fondation persistante, pas les parcours complets.

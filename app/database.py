@@ -42,7 +42,11 @@ class Database:
 
         @event.listens_for(self.engine, "begin")
         def begin(connection):
-            connection.exec_driver_sql("BEGIN")
+            connection.exec_driver_sql(
+                "BEGIN IMMEDIATE"
+                if connection.get_execution_options().get("sqlite_immediate")
+                else "BEGIN"
+            )
 
         self.sessions = sessionmaker(self.engine, expire_on_commit=False)
 
@@ -70,9 +74,15 @@ class Database:
             )
 
     @contextmanager
-    def transaction(self):
+    def transaction(self, *, immediate=False):
         """Commit atomique ; toute exception annule l’ensemble des écritures."""
-        with self.sessions.begin() as session:
+        with (
+            self.engine.connect().execution_options(
+                sqlite_immediate=immediate
+            ) as connection,
+            self.sessions(bind=connection) as session,
+            session.begin(),
+        ):
             yield session
 
     def close(self):

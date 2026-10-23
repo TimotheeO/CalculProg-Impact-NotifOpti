@@ -7,11 +7,13 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     MetaData,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
 from sqlalchemy.types import TypeDecorator
@@ -220,6 +222,10 @@ class Invitation(CreatedAt, EmailIdentity, Base):
     token_digest: Mapped[str] = mapped_column(String(64), unique=True)
     status: Mapped[str] = mapped_column(String(20), default="pending")
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    purpose: Mapped[str] = mapped_column(
+        String(20), default="invitation", server_default="invitation"
+    )
+    invitee_name: Mapped[str | None] = mapped_column(String(120))
 
 
 class InvitationWorkshop(Base):
@@ -250,7 +256,7 @@ class InvitationResponse(CreatedAt, Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     event_id: Mapped[str] = mapped_column(String(64), index=True)
     invitation_id: Mapped[str] = mapped_column(String(64))
-    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    actor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
     response: Mapped[str] = mapped_column(String(20))
 
 
@@ -274,6 +280,12 @@ class OrganizerInvitation(CreatedAt, EmailIdentity, Base):
             "status IN ('pending', 'accepted', 'revoked', 'expired')", name="status"
         ),
         CheckConstraint("expires_at > created_at", name="expiry"),
+        Index(
+            "uq_organizer_pending_email",
+            "email",
+            unique=True,
+            sqlite_where=text("status = 'pending'"),
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -282,6 +294,101 @@ class OrganizerInvitation(CreatedAt, EmailIdentity, Base):
     token_digest: Mapped[str] = mapped_column(String(64), unique=True)
     status: Mapped[str] = mapped_column(String(20), default="pending")
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    accepted_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    accepted_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+
+
+class AuthSession(CreatedAt, Base):
+    __tablename__ = "auth_sessions"
+    __table_args__ = (CheckConstraint("expires_at > created_at", name="expiry"),)
+
+    token_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
+    csrf_token: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    pending_invitation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("organizer_invitations.id")
+    )
+    pending_event_invitation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("invitations.id")
+    )
+
+
+class AuthRateLimit(Base):
+    __tablename__ = "auth_rate_limits"
+    __table_args__ = (CheckConstraint("attempts > 0", name="attempts"),)
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    window_started_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    attempts: Mapped[int] = mapped_column(Integer)
+
+
+class AuthAudit(CreatedAt, Base):
+    __tablename__ = "auth_audit"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    actor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    target_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    invitation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("organizer_invitations.id")
+    )
+    action: Mapped[str] = mapped_column(String(40))
+
+
+class MailDelivery(CreatedAt, Base):
+    __tablename__ = "mail_deliveries"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'sending', 'simulated', 'accepted', 'failed', 'uncertain')",
+            name="status",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    invitation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("organizer_invitations.id"), unique=True
+    )
+    event_id: Mapped[str | None] = mapped_column(ForeignKey("events.id"), index=True)
+    event_invitation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("invitations.id")
+    )
+    notification_id: Mapped[str | None] = mapped_column(
+        ForeignKey("notifications.id"), unique=True
+    )
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    kind: Mapped[str] = mapped_column(
+        String(32),
+        default="organizer_invitation",
+        server_default="organizer_invitation",
+    )
+    recipient: Mapped[str | None] = mapped_column(String(254))
+    subject: Mapped[str | None] = mapped_column(String(240))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    backend: Mapped[str] = mapped_column(String(20))
+    attempted_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    provider_id: Mapped[str | None] = mapped_column(String(240))
+    error_code: Mapped[str | None] = mapped_column(String(80))
+
+
+class EventOperation(CreatedAt, Base):
+    __tablename__ = "event_operations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("events.id"), index=True)
+    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    kind: Mapped[str] = mapped_column(String(40))
+    request_digest: Mapped[str] = mapped_column(String(64))
+
+
+class EventAction(CreatedAt, Base):
+    __tablename__ = "event_actions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("events.id"), index=True)
+    actor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    kind: Mapped[str] = mapped_column(String(40))
+    target_id: Mapped[str | None] = mapped_column(String(64))
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)
 
 
 class Change(CreatedAt, Base):
@@ -301,6 +408,11 @@ class Change(CreatedAt, Base):
     field: Mapped[str] = mapped_column(String(80))
     old_value: Mapped[object | None] = mapped_column(JSON)
     new_value: Mapped[object | None] = mapped_column(JSON)
+    operation_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    notification_scope: Mapped[str] = mapped_column(
+        String(16), default="none", server_default="none"
+    )
+    sequence: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class Notification(CreatedAt, Base):
@@ -325,6 +437,10 @@ class Notification(CreatedAt, Base):
     urgency: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), default="pending")
     read_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    opened_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    due_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), index=True)
+    reason: Mapped[str] = mapped_column(Text, default="", server_default="")
+    naive_requests: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class NotificationChange(Base):
@@ -342,3 +458,6 @@ class NotificationChange(Base):
     event_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     notification_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     change_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    active: Mapped[bool] = mapped_column(
+        Boolean(), default=True, server_default=text("1")
+    )

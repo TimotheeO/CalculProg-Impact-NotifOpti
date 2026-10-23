@@ -1,0 +1,2 @@
+{% extends 'base_email.html' %}{% set title = title|default('Votre invitation organisateur') %}
+{% block content %}<p>Le super-admin vous invite à organiser vos événements sur ImpactFlow.</p><p>Ouvrir ce lien ne crée pas de compte. Vous confirmerez votre accès sur le site.</p><p>Si vous possédez déjà un compte, connectez-vous à celui-ci avant de confirmer.</p>{% if expires_at is defined %}<p>Valable jusqu’au {{ expires_at.strftime('%d/%m/%Y à %H:%M') }} UTC.</p>{% endif %}{% endblock %}{% block button %}Consulter mon invitation{% endblock %}

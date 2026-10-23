@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Vérifier les modifications — ImpactFlow{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('edit_event', event_id=event.id) }}">← Revenir à la version enregistrée</a>
+<section class="space-heading"><div><p class="eyebrow">ESPACE ORGANISATEUR · AVANT CONFIRMATION</p><h1>Tout est en place ?</h1><p class="intro">Vérifiez les modifications de « {{ event.name }} ». Elles seront enregistrées uniquement après confirmation.</p></div></section>
+{% set labels={'name':'Nom','description':'Description','location':'Lieu','starts_at':'Début','ends_at':'Fin','participation_mode':'Participation'} %}
+{% set modes={'invitation':'Sur invitation','open':'Ouvert aux demandes'} %}
+{% if changed %}
+<section class="card table-card"><div class="table-scroll"><table>
+  <thead><tr><th scope="col">Champ</th><th scope="col">Actuellement</th><th scope="col">Après confirmation</th></tr></thead>
+  <tbody>{% for field in changed %}<tr>
+    <th scope="row">{{ labels[field] }}</th>
+    <td class="long-value">{% if field in ['starts_at','ends_at'] %}{{ event[field]|paris_date }}{% elif field == 'participation_mode' %}{{ modes[event[field]] }}{% else %}{{ event[field] or '—' }}{% endif %}</td>
+    <td class="long-value">{% if field in ['starts_at','ends_at'] %}{{ proposed[field]|paris_date }}{% elif field == 'participation_mode' %}{{ modes[proposed[field]] }}{% else %}{{ proposed[field] or '—' }}{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div></section>
+{% else %}<div class="card"><p>Aucune différence avec la version enregistrée.</p></div>{% endif %}
+{% if planned %}
+<section class="data-section"><div class="section-head"><h2>Programme après confirmation</h2><span class="count">{{ planned|length }} atelier(s)</span></div>
+  <div class="workshops">{% for workshop, start, end in planned %}
+    <article class="card workshop"><div><h3>{{ workshop.name }}</h3><p>{{ start|paris_date }} — {{ end|paris_date }}</p></div><span class="count">{{ 'Annulé' if workshop.status == 'cancelled' else 'Actif' }}</span></article>
+  {% endfor %}</div>
+</section>
+{% endif %}
+{% include 'shared/impact.html' %}
+<div class="page-actions">
+  <form method="post" action="{{ url_for('edit_event', event_id=event.id) }}" id="confirm-event-change">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="revision" value="{{ revision }}">
+    <input type="hidden" name="operation_id" value="{{ operation_id }}">
+    {% for field, value in values.items() %}<input type="hidden" name="{{ field }}" value="{{ value }}">{% endfor %}
+    <button class="small-button" type="submit" name="action" value="revise">Reprendre la saisie</button>
+    <button class="button" type="submit" name="action" value="confirm">{{ 'Confirmer les modifications' if changed else 'Revenir à l’événement' }} →</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}{% block title %}Aperçu du changement — ImpactFlow{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('workshop_detail', event_id=event.id, workshop_id=workshop.id) }}">← Revenir à la version enregistrée</a>
+<section class="space-heading"><div><p class="eyebrow">AVANT CONFIRMATION · {{ event.name }}</p><h1>{{ workshop.name }}</h1><p class="intro">Vérifiez le contenu et les personnes réellement concernées.</p></div></section>
+{% set labels={'name':'Nom','description':'Description','location':'Lieu','starts_at':'Début','ends_at':'Fin','capacity':'Capacité','status':'État'} %}
+<div class="card table-card"><div class="table-scroll"><table><thead><tr><th>Champ</th><th>Actuellement</th><th>Après confirmation</th></tr></thead><tbody>{% for field in changed %}<tr><th scope="row">{{ labels[field] }}</th><td class="long-value">{% if field in ['starts_at','ends_at'] %}{{ workshop[field]|paris_date }}{% else %}{{ workshop[field] if workshop[field] is not none else 'Illimitée' }}{% endif %}</td><td class="long-value">{% if field in ['starts_at','ends_at'] %}{{ proposed[field]|paris_date }}{% else %}{{ proposed[field] if proposed[field] is not none else 'Illimitée' }}{% endif %}</td></tr>{% else %}<tr><td colspan="3">Aucune différence ; aucune notification ne sera créée.</td></tr>{% endfor %}</tbody></table></div></div>
+{% if cascade_plan.changes|selectattr('automatic')|list %}
+<section class="data-section"><h2>Conséquences sur le programme</h2><p>Ces modifications seront enregistrées ensemble après confirmation.</p>
+{% for row in cascade_plan.changes if row.automatic %}<article class="card"><h3>{{ row.after.name }}</h3><p>{{ row.reason }}</p>
+{% if row.after.status == 'cancelled' %}<p><strong>Actif → Annulé</strong> · inscriptions et historique conservés.</p>
+{% else %}<p>Avant : {{ row.before.starts_at|paris_date }} — {{ row.before.ends_at|paris_date }}</p><p>Après : <strong>{{ row.after.starts_at|paris_date }} — {{ row.after.ends_at|paris_date }}</strong></p>{% endif %}</article>{% endfor %}</section>{% endif %}
+{% if spared_dependents %}<section class="data-section card"><h2>Ateliers dépendants inchangés</h2><p>{{ 'Ces ateliers étaient déjà annulés.' if proposed.status == 'cancelled' else 'Leur marge absorbe le décalage.' }} Aucune notification ne sera créée pour ces ateliers.</p><ul>{% for item in spared_dependents %}<li>{{ item.name }} · {{ item.starts_at|paris_date }} — {{ item.ends_at|paris_date }}</li>{% endfor %}</ul></section>{% endif %}
+{% include 'shared/impact.html' %}
+<form method="post" class="page-actions" id="confirm-workshop-change"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="operation_id" value="{{ operation_id }}">{% for field,value in values.items() %}<input type="hidden" name="{{ field }}" value="{{ value }}">{% endfor %}<button class="small-button" name="action" value="revise">Reprendre la saisie</button><button class="button" name="action" value="confirm">Confirmer les modifications →</button></form>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.name }} — Organisation — ImpactFlow{% endblock %}
+{% block content %}<nav class="event-sections" aria-label="Outils de l’événement"><a href="/organisateur/evenements/{{ event.id }}/ateliers/nouveau">Créer un atelier</a><a href="/organisateur/evenements/{{ event.id }}/dependances">Dépendances</a><a href="/organisateur/evenements/{{ event.id }}/invitations">Invitations</a><a href="/organisateur/evenements/{{ event.id }}/journal">Journal et envois</a>{% if event.status=='published' %}<a href="/organisateur/evenements/{{ event.id }}/annuler">Annuler l’événement</a>{% endif %}</nav>
+{% set states={'draft':'Brouillon','published':'Publié','cancelled':'Annulé','archived':'Archivé'} %}
+<a class="back" href="{{ url_for('organizer') }}">← Mes événements</a>
+<section class="space-heading">
+  <div><p class="eyebrow">ESPACE ORGANISATEUR · {{ states[event.status]|upper }}</p><h1>{{ event.name }}</h1><p class="intro">{{ event.location }} · {{ event.starts_at|paris_date }} — {{ event.ends_at|paris_date }}</p></div>
+  <span class="role-badge">{{ 'Responsable' if event.owner_id == viewer.id else 'Coorganisateur' }}</span>
+</section>
+<section class="card event-summary">
+  <div><span class="tag">{{ 'Sur invitation' if event.participation_mode == 'invitation' else 'Ouvert aux demandes' }}</span><p class="preserve-lines">{{ event.description or 'Aucune description pour le moment.' }}</p>
+    {% if event.status == 'draft' %}<p>Ce brouillon est privé. Sa publication sera nécessaire pour le rendre accessible selon son mode de participation.</p>
+    {% elif event.status == 'published' and event.participation_mode == 'open' %}<a class="text-link" href="{{ url_for('event_detail', slug=event.slug) }}">Voir la page publique →</a>
+    {% elif event.status == 'published' %}<p>Cet événement reste absent du catalogue public et se rejoint sur invitation.</p>
+    {% else %}<p>Cet événement est conservé en lecture seule.</p>{% endif %}
+  </div>
+  <div class="event-actions">
+    {% if event.status in ['draft','published'] %}<a class="small-button" href="{{ url_for('edit_event', event_id=event.id) }}">Modifier les informations</a>{% endif %}
+    {% if event.status == 'draft' %}
+    <form method="post" action="{{ url_for('publish_event', event_id=event.id) }}" id="publish-event">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="revision" value="{{ revision }}">
+      <button class="button" type="submit">Publier l’événement →</button>
+    </form>
+    {% if event.owner_id == viewer.id %}<a class="text-link" href="{{ url_for('delete_event', event_id=event.id) }}">Supprimer le brouillon</a>{% endif %}
+    {% endif %}
+  </div>
+</section>
+<nav class="event-sections" aria-label="Sections de l’événement"><a href="#programme">Programme · {{ workshops|length }}</a><a href="#participants">Participants confirmés · {{ confirmed_count }}</a><a href="#reponses">Invitations et demandes</a></nav>
+<section id="programme" class="data-section">
+  <div class="section-head"><h2>Programme</h2><span class="count">{{ workshops|length }} atelier(s)</span></div>
+  <div class="workshops">{% for workshop in workshops %}
+    <article class="card workshop"><div><h3><a href="/organisateur/evenements/{{ event.id }}/ateliers/{{ workshop.id }}">{{ workshop.name }}</a></h3><p>{{ workshop.starts_at|paris_date }} — {{ workshop.ends_at|paris_date }}</p></div><div class="workshop-meta"><span>{{ workshop.location }}</span><span>{{ 'Annulé' if workshop.status == 'cancelled' else 'Actif' }}</span></div></article>
+    {% else %}<article class="card empty"><h3>Un programme à imaginer.</h3><p>Le programme ne contient pas encore d’atelier.</p></article>{% endfor %}
+  </div>
+</section>
+<section id="participants" class="data-section">
+  <div class="section-head"><h2>Participants</h2><span class="count">{{ confirmed_count }} confirmé(s)</span></div>
+  <div class="card table-card"><div class="table-scroll"><table><thead><tr><th scope="col">Personne</th><th scope="col">Participation</th></tr></thead><tbody>
+    {% set participation_states={'confirmed':'Confirmée','withdrawn':'Annulée par le participant','removed':'Retirée','pending_confirmation':'Nouvelle confirmation attendue'} %}
+    {% for participation, person in participants %}<tr><td><strong>{{ person.name }}</strong><small>{{ person.email }}</small></td><td>{{ participation_states[participation.status] }}</td></tr>
+    {% else %}<tr><td colspan="2">Aucune participation enregistrée pour cet événement.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+</section>
+<section id="reponses" class="data-section">
+  <div class="section-head"><h2>Invitations et demandes</h2><span class="count">Les réponses en attente ne sont pas des participations confirmées.</span></div>
+  {% set invitation_states={'pending':'En attente','accepted':'Acceptée','declined':'Refusée','revoked':'Révoquée','expired':'Expirée'} %}
+  <div class="card table-card"><div class="table-scroll"><table><thead><tr><th scope="col">Adresse invitée</th><th scope="col">Réponse</th></tr></thead><tbody>
+    {% for invitation in invitations %}<tr><td>{{ invitation.email }}</td><td>{{ 'Expirée' if invitation.status == 'pending' and invitation.expires_at <= now else invitation_states[invitation.status] }}</td></tr>
+    {% else %}<tr><td colspan="2">Aucune invitation pour cet événement.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+  {% if participation_requests %}
+  <div class="card table-card requests-table"><div class="table-scroll"><table><thead><tr><th scope="col">Personne ayant demandé à participer</th><th scope="col">État de la demande</th></tr></thead><tbody>
+    {% for participation_request, person in participation_requests %}<tr><td>{{ person.name }}<small>{{ person.email }}</small></td><td>{{ {'pending':'En attente','accepted':'Acceptée','declined':'Refusée','withdrawn':'Retirée'}[participation_request.status] }}{% if participation_request.status=='pending' and event.status=='published' %}{% for decision,label in [('accepter','Accepter'),('refuser','Refuser')] %}<form method="post" action="/organisateur/evenements/{{ event.id }}/demandes/{{ person.id }}/{{ decision }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="link-button">{{ label }}</button></form>{% endfor %}{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div></div>
+  {% endif %}
+</section>
+{% endblock %}

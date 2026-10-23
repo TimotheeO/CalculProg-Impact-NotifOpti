@@ -1,0 +1,4 @@
+Votre invitation organisateur — ImpactFlow
+Vous êtes invité à organiser des événements sur ImpactFlow.
+Ouvrir le lien ne crée pas votre compte : {{ url }}
+Valable jusqu’au {{ expires }}.

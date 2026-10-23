@@ -1,0 +1,5 @@
+{{ title }} — {{ event_name }}
+Consultez le programme et choisissez vos ateliers avant de confirmer votre participation.
+Ouvrir le lien ne confirme rien. Un compte existant doit se connecter pour accepter.
+Invitation personnelle : {{ url }}
+Valable jusqu’au {{ expires }}.

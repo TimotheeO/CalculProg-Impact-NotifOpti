@@ -1,0 +1,34 @@
+<dialog id="datetime-picker" class="datetime-picker" aria-labelledby="datetime-title" aria-describedby="datetime-help">
+  <div class="datetime-heading">
+    <div><p class="eyebrow" id="datetime-context">DATE ET HEURE</p><h2 id="datetime-title">Choisir un créneau</h2></div>
+    <button type="button" class="small-button" data-datetime-close aria-label="Fermer sans modifier">✕</button>
+  </div>
+  <p id="datetime-help" class="field-help">Heure de Paris · format 24 heures.</p>
+  <div class="datetime-panels">
+    <section class="datetime-calendar" aria-label="Choisir la date">
+      <label for="datetime-date">Date · JJ/MM/AAAA</label>
+      <input id="datetime-date" type="text" inputmode="numeric" maxlength="10" placeholder="29/10/2026" autocomplete="off">
+      <div class="calendar-navigation">
+        <button type="button" class="small-button" id="calendar-previous" aria-label="Mois précédent">‹</button>
+        <select id="calendar-month" aria-label="Mois"></select>
+        <select id="calendar-year" aria-label="Année"></select>
+        <button type="button" class="small-button" id="calendar-next" aria-label="Mois suivant">›</button>
+      </div>
+      <p id="calendar-caption" class="sr-only" aria-live="polite"></p>
+      <div class="calendar-weekdays" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
+      <div id="calendar-days" class="calendar-days" role="group" aria-label="Jours du mois"></div>
+    </section>
+    <section class="datetime-clock" aria-label="Choisir l’heure">
+      <div class="clock-inputs">
+        <div><label for="datetime-hours">Heures · 00 à 23</label><input id="datetime-hours" type="text" inputmode="numeric" maxlength="2" autocomplete="off"></div>
+        <span aria-hidden="true">:</span>
+        <div><label for="datetime-minutes">Minutes · 00 à 59</label><input id="datetime-minutes" type="text" inputmode="numeric" maxlength="2" autocomplete="off"></div>
+      </div>
+      <div class="clock-modes" role="group" aria-label="Partie de l’heure à régler"><button type="button" id="clock-hours" aria-pressed="true">Heures</button><button type="button" id="clock-minutes" aria-pressed="false">Minutes</button></div>
+      <svg id="clock-dial" class="clock-dial" viewBox="0 0 260 260" role="slider" tabindex="0" aria-label="Heures" aria-valuemin="0" aria-valuemax="23" aria-valuenow="0" aria-describedby="clock-help"></svg>
+      <p id="clock-help" class="field-help">Touchez ou faites glisser l’aiguille. Au clavier : flèches pour ajuster, Entrée pour passer aux minutes.</p>
+    </section>
+  </div>
+  <p id="datetime-error" class="form-error" role="alert" hidden></p>
+  <div class="datetime-actions"><button type="button" class="small-button" data-datetime-close>Annuler</button><button type="button" class="button" id="datetime-apply">Valider le créneau</button></div>
+</dialog>

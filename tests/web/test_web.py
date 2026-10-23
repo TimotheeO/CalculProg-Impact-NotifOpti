@@ -55,7 +55,6 @@ def test_nonpublic_event_state_is_not_disclosed(web_client, seeded_db, status):
     [
         "/events/rencontres-creatives",
         "/events/missing",
-        "/admin",
         "/docs",
         "/openapi.json",
     ],

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Modifier l’événement' if event else 'Créer un événement' }} — ImpactFlow{% endblock %}
+{% macro field_error(field) %}
+  {% if errors.get(field) %}<p class="field-error" id="{{ field }}-error">{{ errors[field] }}</p>{% endif %}
+{% endmacro %}
+{% block scripts %}<script defer src="/static/datetime-picker.js"></script>{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('organizer_event', event_id=event.id) if event else url_for('organizer') }}">← {{ 'Retour à l’événement' if event else 'Mes événements' }}</a>
+<section class="space-heading">
+  <div>
+    <p class="eyebrow">ESPACE ORGANISATEUR · {{ 'MODIFICATION' if event else 'NOUVEAU BROUILLON' }}</p>
+    <h1>{{ 'Chaque détail compte.' if event else 'Une rencontre commence ici.' }}</h1>
+    <p class="intro">{{ 'Vérifiez les modifications avant de les confirmer.' if event else 'Préparez votre événement à votre rythme. Il restera privé jusqu’à sa publication.' }}</p>
+  </div>
+</section>
+<div class="event-editor">
+  <section class="card">
+    {% if error %}
+    <div class="form-error" role="alert">{{ error }}{% if event %}<p><a class="text-link" href="{{ url_for('edit_event', event_id=event.id) }}">Recharger la version enregistrée</a></p>{% endif %}</div>
+    {% endif %}
+    <form class="stack-form event-form" method="post" action="{{ url_for('edit_event', event_id=event.id) if event else url_for('new_event') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if event %}<input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="operation_id" value="{{ operation_id }}"><input type="hidden" name="action" value="preview">
+      {% else %}<input type="hidden" name="creation_id" value="{{ creation_id }}">{% endif %}
+      <label for="name">Nom de l’événement</label>
+      <input id="name" name="name" value="{{ values.name }}" required maxlength="160" {% if errors.get('name') %}aria-invalid="true" aria-describedby="name-error"{% endif %}>
+      {{ field_error('name') }}
+      <label for="description">Description <span class="optional">facultatif</span></label>
+      <textarea id="description" name="description" rows="6" maxlength="4000" {% if errors.get('description') %}aria-invalid="true" aria-describedby="description-error"{% endif %}>{{ values.description }}</textarea>
+      <p class="field-help">Présentez la rencontre, son public et son programme. 4 000 caractères maximum.</p>
+      {{ field_error('description') }}
+      <label for="location">Lieu</label>
+      <input id="location" name="location" value="{{ values.location }}" required maxlength="240" {% if errors.get('location') %}aria-invalid="true" aria-describedby="location-error"{% endif %}>
+      {{ field_error('location') }}
+      <div class="form-columns">
+        <div>
+          <label for="starts_at">Début · heure de Paris</label>
+          <input id="starts_at" name="starts_at" type="datetime-local" data-french-datetime lang="fr" value="{{ values.starts_at }}" min="1900-01-01T00:00" max="2100-12-31T23:59" required {% if errors.get('starts_at') %}aria-invalid="true" aria-describedby="starts_at-error"{% endif %}>
+          {{ field_error('starts_at') }}
+        </div>
+        <div>
+          <label for="ends_at">Fin · heure de Paris</label>
+          <input id="ends_at" name="ends_at" type="datetime-local" data-french-datetime lang="fr" value="{{ values.ends_at }}" min="1900-01-01T00:00" max="2100-12-31T23:59" required {% if errors.get('ends_at') %}aria-invalid="true" aria-describedby="ends_at-error"{% endif %}>
+          {{ field_error('ends_at') }}
+        </div>
+      </div>
+      <label for="participation_mode">Mode de participation</label>
+      <select id="participation_mode" name="participation_mode" required {% if errors.get('participation_mode') %}aria-invalid="true" aria-describedby="participation_mode-error"{% endif %}>
+        <option value="invitation" {% if values.participation_mode == 'invitation' %}selected{% endif %}>Sur invitation</option>
+        <option value="open" {% if values.participation_mode == 'open' %}selected{% endif %}>Ouvert aux demandes</option>
+      </select>
+      {{ field_error('participation_mode') }}
+      <p class="field-help">Un événement ouvert apparaît dans le catalogue après publication. Une demande nécessite l’accord d’un organisateur pour devenir une participation.</p>
+      <button class="button" type="submit">{{ 'Vérifier les modifications' if event else 'Créer le brouillon' }} →</button>
+    </form>
+  </section>
+  <aside class="card soft-card editor-aside">
+    <span class="tag">{{ 'Avant confirmation' if event else 'Vous gardez la main' }}</span>
+    <h2>{{ 'Un programme cohérent.' if event else 'Du brouillon à la rencontre.' }}</h2>
+    {% if event %}
+    <p>Un report du début décale aussi tous les ateliers, en conservant leurs horaires locaux à Paris. L’aperçu vous permet de vérifier le programme résultant.</p>
+    <p>Chaque atelier doit rester dans la période de l’événement. Aucun choix de participant n’est supprimé par ce formulaire.</p>
+    {% else %}
+    <p>Le brouillon reste visible uniquement par les organisateurs autorisés. Vous déciderez ensuite de sa publication.</p>
+    <p>Sur invitation : l’événement reste absent du catalogue. Ouvert aux demandes : il devient visible après publication.</p>
+    {% endif %}
+  </aside>
+</div>
+{% include 'shared/datetime_picker.html' %}
+{% endblock %}

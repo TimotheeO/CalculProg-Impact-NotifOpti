@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Supprimer le brouillon — ImpactFlow{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('organizer_event', event_id=event.id) }}">← Conserver et consulter l’événement</a>
+<section class="space-heading"><div><p class="eyebrow">ESPACE ORGANISATEUR · SUPPRESSION</p><h1>Supprimer ce brouillon ?</h1><p class="intro">{{ event.name }}</p></div></section>
+<section class="card deletion-card">
+  {% if blockers %}
+  <div class="form-error" role="status"><strong>Ce brouillon ne peut pas être supprimé.</strong>{% for blocker in blockers %}<p>{{ blocker }}</p>{% endfor %}</div>
+  <p>Les événements utilisés conservent leurs participations et leur historique.</p>
+  {% else %}
+  <p>Cette suppression est définitive. Le programme préparé sera également supprimé. Aucune participation ni aucun historique utilisé ne peut être effacé par cette action.</p>
+  {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+  <form method="post" action="{{ url_for('delete_event', event_id=event.id) }}" class="stack-form" id="delete-event">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="revision" value="{{ revision }}">
+    <label for="confirmation">Recopiez le nom « {{ event.name }} » pour confirmer</label>
+    <input id="confirmation" name="confirmation" value="{{ confirmation }}" required maxlength="160" autocomplete="off">
+    <button class="button" type="submit">Supprimer définitivement le brouillon</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

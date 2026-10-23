@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<section class="hero"><p class="eyebrow">VOTRE RÉPONSE</p><h1>{{ title }}</h1><p class="intro">{{ message }}</p><a class="button" href="{{ '/espace' if viewer else '/' }}">Continuer →</a></section>{% endblock %}

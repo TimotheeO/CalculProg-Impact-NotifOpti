@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% block title %}Annuler l’événement — ImpactFlow{% endblock %}{% block content %}
+<a class="back" href="{{ url_for('organizer_event', event_id=event.id) }}">← Conserver l’événement</a><section class="space-heading"><div><p class="eyebrow">ESPACE ORGANISATEUR · AVANT CONFIRMATION</p><h1>Annuler {{ event.name }} ?</h1><p class="intro">Les nouvelles participations et inscriptions seront fermées. Les données et l’historique seront conservés.</p></div></section>
+{% include 'shared/impact.html' %}
+<form method="post" class="page-actions"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="operation_id" value="{{ operation_id }}"><button class="button">Confirmer l’annulation</button></form>{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Modifier un atelier' if workshop else 'Créer un atelier' }} — ImpactFlow{% endblock %}
+{% block scripts %}<script defer src="/static/datetime-picker.js"></script>{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('organizer_event', event_id=event.id) }}">← {{ event.name }}</a>
+<section class="space-heading"><div><p class="eyebrow">ESPACE ORGANISATEUR · PROGRAMME</p><h1>{{ 'Affiner le programme.' if workshop else 'Un nouvel atelier.' }}</h1><p class="intro">Période de l’événement : {{ event.starts_at|paris_date }} — {{ event.ends_at|paris_date }}.</p></div></section>
+<div class="event-editor"><section class="card">
+{% if error %}<div class="form-error" role="alert">{{ error }}{% if workshop %}<p><a class="text-link" href="{{ url_for('edit_workshop', event_id=event.id, workshop_id=workshop.id) }}">Recharger la version enregistrée</a></p>{% endif %}</div>{% endif %}
+<form class="stack-form event-form" method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+{% if workshop %}<input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="operation_id" value="{{ operation_id }}"><input type="hidden" name="action" value="preview">{% else %}<input type="hidden" name="creation_id" value="{{ creation_id }}">{% endif %}
+{% for field,label,maximum in [('name','Nom de l’atelier',160),('location','Salle ou lieu',240)] %}
+<label for="{{ field }}">{{ label }}</label><input id="{{ field }}" name="{{ field }}" value="{{ values[field] }}" required maxlength="{{ maximum }}" {% if errors.get(field) %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}>
+{% if errors.get(field) %}<p class="field-error" id="{{ field }}-error">{{ errors[field] }}</p>{% endif %}{% endfor %}
+<label for="description">Description · facultatif</label><textarea id="description" name="description" maxlength="4000" rows="4">{{ values.description }}</textarea>
+<div class="form-columns">{% for field,label in [('starts_at','Début · Paris'),('ends_at','Fin · Paris')] %}<div><label for="{{ field }}">{{ label }}</label><input id="{{ field }}" name="{{ field }}" type="datetime-local" data-french-datetime lang="fr" value="{{ values[field] }}" required>{% if errors.get(field) %}<p class="field-error" id="{{ field }}-error">{{ errors[field] }}</p>{% endif %}</div>{% endfor %}</div>
+<label for="capacity">Capacité maximale</label><input id="capacity" name="capacity" type="number" min="1" max="100000" value="{{ values.capacity }}"><p class="field-help">Laissez vide pour une capacité illimitée.</p>{% if errors.get('capacity') %}<p class="field-error">{{ errors.capacity }}</p>{% endif %}
+<label for="status">État</label><select id="status" name="status"><option value="active" {% if values.status == 'active' %}selected{% endif %}>Actif</option><option value="cancelled" {% if values.status == 'cancelled' %}selected{% endif %}>Annulé</option></select>
+<button class="button" type="submit">{{ 'Vérifier les modifications' if workshop else 'Créer l’atelier' }} →</button>
+</form></section><aside class="card soft-card"><h2>Chaque atelier a sa place.</h2><p>Les créneaux doivent rester dans la période de l’événement. Une dépendance impose que l’atelier suivant attende la fin de son prérequis. Un retard décale uniquement les ateliers qui manquent de marge ; une annulation annule la suite. L’aperçu présente ces conséquences.</p><p>Annuler conserve les inscriptions et l’historique. Les événements publiés présentent un aperçu des personnes concernées avant confirmation.</p></aside></div>
+{% include 'shared/datetime_picker.html' %}
+{% endblock %}

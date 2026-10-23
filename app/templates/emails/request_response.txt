@@ -1,0 +1,3 @@
+{{ title }} — {{ event_name }}
+{{ content }}
+Votre espace personnel : {{ url }}

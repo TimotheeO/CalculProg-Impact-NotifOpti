@@ -1,14 +1,17 @@
 import argparse
+import getpass
 import json
 import sys
+from dataclasses import replace
 
 from alembic.util.exc import CommandError
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.auth.services import bootstrap_admin
 from app.config import Settings
 from app.database import Database
-from app.models import Change, Event, Notification, Participation, Workshop
+from app.models import Change, Event, Notification, Participation, Workshop, utc_now
 from app.seeds import EVENT_ID, seed_demo
 from app.services import DomainError, change_workshop_location, load_graph
 from src.impact import compute_impacted_set
@@ -25,6 +28,12 @@ def parser():
     sub = result.add_subparsers(dest="command", required=True)
     sub.add_parser("init-db", help="Appliquer les migrations, sans effacer les données")
     sub.add_parser("seed-demo", help="Insérer les fixtures fictives dans une base vide")
+    admin = sub.add_parser(
+        "create-super-admin",
+        help="Créer l’unique super-admin, mot de passe saisi sans affichage",
+    )
+    admin.add_argument("--email", required=True)
+    admin.add_argument("--name", required=True)
     inspect = sub.add_parser(
         "inspect", help="Afficher l’état durable et un impact BFS en JSON"
     )
@@ -46,7 +55,7 @@ def main(argv=None):
     database = None
     try:
         settings = (
-            Settings(database_url=args.database_url)
+            replace(Settings.from_env(), database_url=args.database_url)
             if args.database_url
             else Settings.from_env()
         )
@@ -59,7 +68,16 @@ def main(argv=None):
             )
             return 0
         database.check_schema()
-        if args.command == "seed-demo":
+        if args.command == "create-super-admin":
+            password = getpass.getpass("Mot de passe (15 à 128 caractères) : ")
+            confirmation = getpass.getpass("Confirmez le mot de passe : ")
+            if password != confirmation:
+                raise ValueError("Les deux mots de passe ne correspondent pas")
+            bootstrap_admin(
+                database, settings, args.email, args.name, password, utc_now()
+            )
+            print("Super-admin créé. Connectez-vous sur /connexion.")
+        elif args.command == "seed-demo":
             with database.transaction() as session:
                 created = seed_demo(session)
             print(
@@ -129,6 +147,9 @@ def main(argv=None):
                 else "Valeur identique ; aucun changement ni notification créé."
             )
         return 0
+    except (EOFError, KeyboardInterrupt):
+        print("Création interrompue ; aucun mot de passe enregistré.", file=sys.stderr)
+        return 2
     except (DomainError, ValueError, RuntimeError) as error:
         print(f"Erreur : {error}", file=sys.stderr)
         return 2

@@ -1,0 +1,5 @@
+{{ title }} — {{ event_name }}
+Confirmez votre adresse pour transmettre votre demande à l’organisateur : {{ url }}
+Votre demande restera en attente de son accord. Aucune inscription n’est activée avant approbation.
+Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.
+Valable jusqu’au {{ expires }}.

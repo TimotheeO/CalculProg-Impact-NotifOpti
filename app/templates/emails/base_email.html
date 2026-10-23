@@ -1,0 +1,10 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:24px;background:#f7f5f1;color:#242124;font:16px/1.6 Arial,sans-serif">
+<main style="max-width:580px;margin:auto;padding:28px;background:white;border:1px solid #e6e1df;border-radius:16px">
+<p style="color:#79364b;font-size:22px;font-weight:bold">ImpactFlow</p>
+<h1 style="font-size:25px;line-height:1.25">{{ title }}</h1>
+{% if event_name %}<h2 style="font-size:18px">{{ event_name }}</h2>{% endif %}
+{% block content %}{% endblock %}
+<p><a style="display:inline-block;padding:12px 18px;background:#79364b;color:white;border-radius:8px;text-decoration:none" href="{{ url }}">{% block button %}Consulter sur ImpactFlow{% endblock %}</a></p>
+<p style="font-size:13px;color:#70696d">Ce message vous est personnel. {% if expires %}Lien valable jusqu’au {{ expires }}.{% endif %}</p>
+</main></body></html>

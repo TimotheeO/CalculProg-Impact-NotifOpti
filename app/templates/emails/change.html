@@ -1,0 +1,4 @@
+{% extends 'base_email.html' %}{% block content %}
+<p>Voici les informations finales concernant votre participation :</p><ul>{% for line in content.splitlines() %}<li>{{ line }}</li>{% endfor %}</ul>
+{% if reason %}<p><strong>Pourquoi vous recevez ce message :</strong> {{ reason }}</p>{% endif %}
+{% endblock %}

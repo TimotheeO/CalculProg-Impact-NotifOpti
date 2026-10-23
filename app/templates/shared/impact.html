@@ -1,0 +1,14 @@
+{% if event.status == 'published' and changed %}
+<section class="data-section card"><h2>Qui sera prévenu ?</h2>
+<p><strong>{{ impact.users|length }} destinataire(s) unique(s)</strong> · {{ impact.spared|length }} personne(s) épargnée(s).</p>
+{% if impact_by_field is defined %}
+<p>Seuls les inscrits aux ateliers réellement modifiés seront prévenus. Une annulation annule les ateliers dépendants ; un retard les décale seulement si leur marge est insuffisante.</p>
+<ul>{% for field, field_impact in impact_by_field.items() %}<li><strong>{{ labels[field] }}</strong> : {{ field_impact.users|length }} personne(s) · {{ 'inscrits aux ateliers réellement modifiés en cascade' if field_impact.propagated else 'inscrits de cet atelier uniquement' }}.</li>{% endfor %}</ul>
+{% endif %}
+{% if impact.workshops %}<p>Ateliers concernés : {% for w in impact.workshops %}{{ w.name }}{{ ', ' if not loop.last }}{% endfor %}.</p>{% endif %}
+<ul class="impact-people">{% for person in impact.users %}<li><strong>{{ person.name }}</strong><span>{{ impact.reasons[person.id] }}</span></li>{% else %}<li>Aucun participant confirmé concerné.</li>{% endfor %}</ul>
+{% if impact.spared %}<details><summary>Personnes épargnées</summary><p>{% for person in impact.spared %}{{ person.name }}{{ ', ' if not loop.last }}{% endfor %}</p></details>{% endif %}
+<p class="field-help">Le ciblage sera recalculé à la confirmation. Les informations finales seront regroupées par personne et événement sur {{ request.app.state.settings.batch_window_seconds|int }} secondes.</p>
+</section>
+{% elif event.status == 'draft' %}<p class="local-notice">Le programme est en brouillon : aucune notification ne sera envoyée.</p>{% endif %}
+{% if conflicts %}<section class="form-error" role="status"><h2>Conflits à signaler</h2>{% for conflict in conflicts %}<p>{{ conflict }}</p>{% endfor %}</section>{% endif %}

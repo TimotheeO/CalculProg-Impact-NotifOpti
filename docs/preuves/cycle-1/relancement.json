@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Après relancement : contenu final et état lu conservés",
+    "Après relancement : compteurs et historique conservés",
+    "Fiche atelier et places conservées",
+    "Restriction temporaire des dates et lieu levée",
+    "Aucun renvoi automatique après relancement"
+  ],
+  "javascript_errors": 0,
+  "automatic_duplicate_after_restart": false
+}

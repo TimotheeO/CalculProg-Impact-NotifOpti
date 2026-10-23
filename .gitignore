@@ -10,3 +10,6 @@ __pycache__/
 var/
 *.sqlite3
 *.sqlite3-*
+
+# Consignes locales éventuelles non versionnées.
+/AGENTS.md

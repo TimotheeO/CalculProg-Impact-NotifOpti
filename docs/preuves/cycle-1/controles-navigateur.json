@@ -1,0 +1,31 @@
+{
+  "checks": [
+    "Atelier et nombre de places",
+    "Dépendance persistante par formulaire",
+    "Boucle refusée avec message utile",
+    "Publication visible",
+    "Quatre invitations affichées en attente",
+    "Fragment personnel retiré de l’adresse",
+    "Confirmation et espace participant",
+    "Fragment personnel retiré de l’adresse",
+    "Confirmation et espace participant",
+    "Refus sans création de compte",
+    "Réponses acceptées, refusée et en attente",
+    "Aperçu ciblé unique et branche épargnée",
+    "Aperçu ciblé unique et branche épargnée",
+    "Journal actualisation active",
+    "Worker réel et journal actualisé sans action",
+    "Fusion 2 demandes vers 1 message",
+    "Aucun débordement horizontal desktop",
+    "Aucun débordement horizontal mobile",
+    "Boîte interne et valeur finale cohérente",
+    "Notification marquée lue"
+  ],
+  "javascript_errors": 0,
+  "event_id": "04428e28-0f3b-4607-b810-9e170995546f",
+  "workshops": [
+    "8b1fd223-5474-4931-ab1b-fcf3a5e35ef2",
+    "496ae480-f5a8-42aa-8e69-8fd7fc4a0d59",
+    "3ed1cf41-9d5e-42c4-be57-704684c6b838"
+  ]
+}

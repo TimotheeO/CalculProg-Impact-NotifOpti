@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "Calendrier cliquable sans application prématurée",
+    "Calendrier au clavier : jour suivant",
+    "Calendrier au clavier : semaine suivante, mois suivant",
+    "Calendrier : passage du 31 décembre au 1er janvier",
+    "Navigation au mois précédent avec changement d’année",
+    "Année bissextile et heure 23:59",
+    "29 février 1900 refusé",
+    "Cadran tactile mobile : sélection de 14 h"
+  ],
+  "javascript_errors": 0
+}

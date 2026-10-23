@@ -1,0 +1,11 @@
+{
+  "transport": "SMTP local Mailpit v1.31.6",
+  "notification_count": 1,
+  "recipients": [
+    "accepte@example.test"
+  ],
+  "subject": "Votre événement a changé — Rencontre de soutenance",
+  "final_value": "Salle C",
+  "obsolete_value_absent": true,
+  "external_inbox_reception_proven": false
+}

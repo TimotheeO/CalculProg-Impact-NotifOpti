@@ -1,282 +1,265 @@
 # ImpactFlow — démonstration générale
 
-Guide unique à mettre à jour au fil des fonctionnalités et des soutenances.
-Passage principal de 8 à 10 minutes ; variantes et contrôles complémentaires
-ci-dessous. Ce guide ne constitue pas une preuve de répétition humaine réussie.
+Guide unique des deux cycles, à mettre à jour au fil des répétitions.
+Passage principal : **8 à 10 minutes**. Les contrôles complémentaires utilisent
+le même guide, hors chronomètre et dans une nouvelle base.
 
-## Préparation avant le chronomètre
+## Préparer avant le chronomètre
 
-Le script prépare une base fictive séparée dans **`var/demo-seance-01`**.
-Les Rencontres ont lieu le prochain jeudi, 14–18 h à Paris ; utiliser la date
-affichée dans le programme. Un dossier déjà préparé conserve ses changements.
-Arrêter ton éventuel ancien serveur sur 8000 avec Ctrl+C dans son terminal.
-Depuis `/home/timothee/Annee_3/Simulated/CalculProg-Impact-NotifOpti` :
+Depuis `/home/timothee/Annee_3/Simulated/CalculProg-Impact-NotifOpti`, arrêter
+l’ancien serveur avec Ctrl+C dans son terminal. Ne pas supprimer ses données.
 
 ```bash
-# Terminal 1 : réutilise Mailpit s’il tourne déjà, sinon le démarre.
+# Terminal 1 : conserve Mailpit et ses anciens messages s’il tourne déjà.
 ./scripts/mailpit.sh
 ```
 
 ```bash
-# Terminal 2 : sélection explicite de la base de répétition.
-DEMO_DIRECTORY=var/demo-seance-01 BATCH_WINDOW_SECONDS=60 ./scripts/run_prepared_demo.sh
+# Terminal 2 : une nouvelle copie fictive ; changer 01 en 02 pour recommencer.
+DEMO_DIRECTORY=var/demo-cycle2-01 BATCH_WINDOW_SECONDS=60 ./scripts/run_prepared_demo.sh
 ```
 
-Application : <http://127.0.0.1:8000> ; Mailpit : <http://127.0.0.1:8025>.
-Le terminal doit annoncer `demo-seance-01/impactflow.sqlite3`, fenêtre **60 s**,
-débit **1 tentative/s**. Aucun serveur n’a été démarré par la préparation du guide.
+- Application : <http://127.0.0.1:8000> ; Mailpit : <http://127.0.0.1:8025>.
+- Utiliser **127.0.0.1**, pas localhost : les formulaires contrôlent l’origine.
+- Vérifier dans le terminal : bonne base, fenêtre fixe **60 s**, **1 tentative/s**.
+- Thomas dans Chrome normal, Alice dans Chrome privé. Toutes les fenêtres
+  privées Chrome partagent leur session ; utiliser un autre navigateur/profil
+  pour conserver un troisième compte connecté.
+- La base commence avec **8 confirmés, 6 ateliers**, sans changement ni envoi
+  préchargé. Les Rencontres ont lieu le prochain jeudi, 14–18 h à Paris :
+  utiliser les dates réellement affichées. Le brouillon est la semaine suivante.
+- Un dossier déjà préparé conserve ses modifications. Choisir un nouveau
+  dossier pour revenir au point de départ, sans écraser une ancienne répétition.
 
-Ouvrir Chrome normal pour **Thomas** (`demo-thomas@example.test`) et une fenêtre
-privée pour **Alice** (`demo-alice@example.test`). Mot de passe des deux comptes
-fictifs : **`Demo-ImpactFlow-2026!`**. Les onglets ordinaires partagent leur session.
-Préparer Les Rencontres créatives, son Journal et envois, Mailpit et Mon espace
-d’Alice. Garder ce guide à côté et lancer un chronomètre au début du passage.
+| Compte fictif | Adresse | Usage |
+|---|---|---|
+| Thomas | `demo-thomas@example.test` | Organisateur des Rencontres |
+| Alice | `demo-alice@example.test` | Cuisine + Dégustation |
+| Léa | `demo-lea@example.test` | Coorganisatrice ; responsable de La Fabrique |
+| Nora | `demo-nora@example.test` | Branche Poterie, épargnée par Cuisine |
+| Alex | `demo-alex@example.test` | Confirmé sans atelier, concerné par un changement global |
+| Super-admin | `admin.demo@example.test` | Gestion uniquement, aucune participation |
 
-Les Rencontres commencent avec **8 confirmés et 6 ateliers**. Aucun nouveau
-changement/envoi n’est préchargé. Mailpit peut contenir tes anciens messages :
-vérifier le destinataire et la date/heure des nouveaux courriers sans supprimer
-les anciens. Ne pas accepter de nouvelle invitation avant l’étape 7.
+**Mot de passe test commun : `Demo-ImpactFlow-2026!`.** Les accès complets sont
+locaux dans `var/demo-cycle2-01/ACCES_DEMO.md`. Aucun compte personnel
+supplémentaire n’est créé pour le super-admin. Les liens préchargés dans
+`invitations.html` ne sont pas des preuves d’envoi ; ils expirent après 48 h.
 
-## Passage à refaire dans cet ordre
+Ouvrir le programme, son tableau de bord, son journal, Mailpit et l’espace d’Alice.
+Les onglets d’une même session partagent le compte. Dans Mailpit, vérifier
+l’heure et l’adresse : d’anciens messages peuvent être présents.
 
-### 1 — 0:00 à 0:40 : le problème
+## Passage principal, dans cet ordre
 
-Dire avec tes mots : « Dans un événement avec plusieurs ateliers, un changement
-ne concerne pas forcément tout le monde. Je calcule les conséquences sur le
-programme, cible les inscrits concernés et regroupe leurs messages. »
-Annoncer que les comptes et le programme sont préparés ; les changements et
-messages suivants seront produits en direct.
+### 1 — 0:00 à 0:45 : le problème et les rôles
 
-### 2 — 0:40 à 1:20 : le programme
+Dire avec tes mots : « Un changement ne concerne pas forcément tout l’événement.
+Je calcule les conséquences sur le programme, puis les personnes concernées,
+et je regroupe leurs informations avant d’envoyer les messages. »
+Montrer que Thomas organise et qu’Alice participe. Le super-admin gère les accès
+organisateurs dans un espace distinct ; il ne participe pas avec ce compte.
 
-Montrer les 8 confirmés, les 6 ateliers et Dépendances. Expliquer A→B : B attend
-la fin de A. Cuisine→Dégustation→Accords, plus Cuisine→Accords, forme un diamant ;
-Poterie est sur une branche distincte.
-Attendu : Cuisine 14–15, Dégustation 15–16, Accords 16–17 ; Poterie finit à 15:30,
-Vernissage commence à 16:00. Alice fait Cuisine et Dégustation.
+### 2 — 0:45 à 1:30 : le graphe réel
 
-### 3 — 1:20 à 2:00 : une salle reste locale
+Ouvrir **Tableau de bord et graphe**. Montrer les 8 confirmés et 6 ateliers.
+Sélectionner Cuisine : Cuisine→Dégustation→Accords, plus Cuisine→Accords, forme
+un diamant. Poterie→Vernissage constitue une autre branche ; Photo est indépendante.
+
+A→B signifie que B attend la fin de A. Cuisine 14–15, Dégustation 15–16,
+Accords 16–17 ; Poterie finit à 15:30, Vernissage commence à 16:00.
+Les liens représentent des dépendances : l’aperçu d’un changement détermine
+ensuite les conséquences réellement proposées.
+
+### 3 — 1:30 à 2:10 : une salle reste locale
 
 Cuisine → Modifier → remplacer seulement `La Cuisine` par `Salle B` → Vérifier.
-Attendu : **2 destinataires, 6 épargnés** ; Alice et Sofia, sans Mehdi ni Lina.
-Dire : « Une salle est une information locale ; faire un atelier dépendant ne
-rend pas cette information utile. » **Ne pas confirmer.** Reprendre la saisie
-et remettre `La Cuisine` pour conserver les chiffres de fusion ci-dessous.
+Attendu : **2 destinataires, 6 épargnés**, Alice et Sofia. Le graphe de l’aperçu
+montre uniquement la source modifiée. Mehdi et Lina sont épargnés.
 
-### 4 — 2:00 à 3:00 : deux changements, un résultat final
+**Ne pas confirmer.** Reprendre la saisie et remettre `La Cuisine` pour garder
+les chiffres du scénario de fusion.
 
-Garder le début à 14:00 ; passer seulement la fin à **15:10**, puis vérifier.
-Attendu : Dégustation **15:10–16:10**, Accords **16:10–17:10**, **4 destinataires
-uniques et 4 épargnés**. Confirmer et noter l’heure de cette confirmation.
-Immédiatement revenir sur Modifier, passer la fin à **15:20**, vérifier et
-confirmer **moins de 60 s après la première confirmation**. Utiliser le formulaire
-actualisé, pas un ancien onglet ouvert avant la première modification.
+### 4 — 2:10 à 3:00 : deux changements, un résultat final
 
-Attendu après confirmation : Cuisine **14:00–15:20**, Dégustation **15:20–16:20**,
-Accords **16:20–17:20** réellement enregistrés. Dire : « Les créneaux sont adjacents,
-donc le retard se transmet. Je conserve les durées, confirme tout le plan dans une
-transaction et ne compte Alice qu’une fois. » Les économies restent à zéro tant
-que les groupes ne sont pas fermés.
+Garder le début à 14:00. Passer seulement la fin à **15:10**, puis vérifier.
+Attendu : Dégustation 15:10–16:10, Accords 16:10–17:10,
+**4 destinataires uniques**, et les deux conséquences sur le graphe.
 
-### 5 — 3:00 à 4:10 : une marge absorbe le retard
+Confirmer et noter l’heure. Revenir immédiatement sur Modifier, passer la fin
+à **15:20**, vérifier et confirmer **moins de 60 secondes après la première
+confirmation**. Utiliser le formulaire actualisé.
 
-Pendant l’attente, Poterie → Modifier → fin **15:45** → Vérifier, **sans confirmer**.
-Attendu : **Vernissage inchangé, 16:00–17:00 ; Nora seule concernée**.
+Attendu après enregistrement : Cuisine 14:00–15:20, Dégustation 15:20–16:20,
+Accords 16:20–17:20. Les horaires sont réellement modifiés dans la base.
+Expliquer : BFS trouve les candidats ; l’ordre topologique traite tous les
+prérequis avant leurs dépendants. La durée des ateliers est conservée.
+
+### 5 — 3:00 à 3:45 : la marge absorbe le retard
+
+Pendant le regroupement, Poterie → Modifier → fin **15:45** → Vérifier,
+**sans confirmer**. Attendu : Vernissage inchangé, 16–17 h ; **Nora seule**.
 Revenir à la version enregistrée.
-Dire : « La marge absorbe le retard, donc Hugo n’est pas prévenu. Une fin de Poterie
-à 16:15 ne déplacerait Vernissage que de 15 minutes. Le BFS trouve les candidats,
-puis l’ordre topologique calcule les conséquences après tous leurs prérequis. »
-Expliquer aussi : « La fenêtre fixe démarre au premier changement ; elle n’est
-pas repoussée. L’historique conserve les étapes, le message conserve le résultat final. »
 
-### 6 — 4:10 à 5:20 : vérifier les messages
+Dire : « Le retard est absorbé par la marge. Hugo n’est donc pas prévenu.
+La fenêtre commence au premier changement et n’est pas repoussée. L’historique
+garde les étapes, le message conserve le résultat final. »
 
-Attendre **60 s depuis la première confirmation**, puis quelques secondes pour
-les 4 tentatives à 1/s et le rafraîchissement du journal. Le temps dépend des
-confirmations réelles, pas seulement du chronomètre de présentation.
+### 6 — 3:45 à 5:00 : comparer le site et les e-mails
+
+Attendre **60 secondes depuis la première confirmation**, puis les quatre
+transmissions à 1/s. Actualiser le journal si nécessaire.
 Attendu : **8 demandes naïves → 4 messages finaux → 4 évités**.
+Ces compteurs sont mesurés avant les nouvelles opérations qui suivent.
 
-Dans Mailpit, montrer les nouveaux messages : Alice voit Cuisine finir à **15:20**
-et Dégustation **15:20–16:20** ; Lina voit Accords **16:20–17:20**, avec la cause
-de la cascade. Aucun horaire intermédiaire à 15:10 ni changement de salle.
-Nora ne reçoit pas ce changement. Dans la session privée d’Alice, actualiser Mes
-notifications, montrer le même contenu final et le marquer comme lu.
-Dire : « Mailpit prouve une transmission SMTP locale, pas une réception Gmail.
-La notification dans le site persiste également. »
+Dans Mailpit : Alice voit Cuisine finir à 15:20 et Dégustation 15:20–16:20 ;
+Lina voit Accords 16:20–17:20 et la cause de la cascade. Aucun 15:10 ni Salle B.
+Nora ne reçoit pas ce changement. Dans la session d’Alice, montrer le même
+contenu final et le marquer comme lu.
 
-### 7 — 5:20 à 7:40 : création et invitation
+Dire : « Mailpit capture un véritable échange SMTP local. Ce contrôle ne prouve
+pas une réception Gmail. Le message reste aussi dans le site si l’e-mail échoue. »
 
-Organisation → brouillon **Festival des savoir-faire** → créer l’atelier
-`Découverte`, salle `Espace démo`, capacité `5`, **le jour affiché du brouillon**,
-de **14:00 à 15:00**. Montrer le calendrier français/cadran 24 h, puis l’atelier
-enregistré dans le programme. Revenir aux Rencontres.
+### 7 — 5:00 à 6:30 : inviter et laisser choisir
 
-Invitations → sélectionner **Noé Laurent** → envoyer. Ouvrir le nouveau courrier
-de Noé dans Mailpit. Déconnecter Alice dans la session privée ; y ouvrir le lien
-de Noé, créer son compte et sélectionner Cuisine + Dégustation avant d’accepter.
-Le mot de passe fictif peut être `Demo-ImpactFlow-2026!`.
-Attendu : ouvrir le lien seul ne confirme rien ; accepter crée ses inscriptions.
-Chez Thomas, **9 confirmés**, Noé apparaît. Les chiffres de l’étape 6 étaient
-mesurés avant cette nouvelle admission.
+Chez Thomas : Invitations → sélectionner **Noé Laurent** → envoyer.
+Ouvrir son nouveau courrier dans Mailpit. Déconnecter Alice dans la session
+privée, puis y ouvrir le lien de Noé. Créer son compte avec le mot de passe
+fictif et sélectionner Cuisine + Dégustation avant d’accepter.
 
-Si tu dépasses le temps, montrer l’envoi et le formulaire sans accepter, puis
-terminer l’acceptation hors chronomètre. Pour t’entraîner au refus, le lien de
-Julie dans `var/demo-seance-01/invitations.html` permet ensuite de refuser
-sans créer de compte ; utiliser la session participante déconnectée.
+Attendu : ouvrir le lien ne confirme rien ; accepter crée les inscriptions.
+Chez Thomas : **9 confirmés**. Pour une création complète, utiliser ensuite
+le brouillon Festival hors chronomètre, comme indiqué plus bas.
 
-### 8 — 7:40 à 9:00 : annulation et limites
+### 8 — 6:30 à 7:15 : annulation prioritaire
 
-Cuisine → Modifier → état Annulé → Vérifier. Attendu : Dégustation et Accords
-également annulés dans le plan ; Poterie épargnée. **5 destinataires si Noé a
-accepté, sinon 4**. Dire : « Annuler le prérequis rend la suite impossible :
-j’annule les dépendants, en conservant les inscriptions et l’historique. »
-Confirmer **en dernier** et ouvrir Dégustation : état Annulé. Les messages
-attendent encore leur fenêtre dans cette version ; les vérifier après le passage.
-Le départ immédiat et la réactivation avec nouvelle confirmation restent au cycle 2.
+Cuisine → Modifier → Annulé → Vérifier. Attendu : Dégustation et Accords
+également annulés, Poterie épargnée ; **5 destinataires si Noé a accepté**,
+sinon 4. Confirmer.
 
-Présenter les limites restantes : parcours participant complet, reconfirmation,
-reprise/relance aboutie, graphe visuel, exports et archivage. Les choix et comparaisons utiles figurent dans les questions ci-dessous
-et dans le [README](../README.md#architecture-et-choix).
+L’annulation est prête au prochain passage du worker, **sans attendre 60 s**,
+mais les cinq tentatives gardent le débit d’une par seconde. Montrer l’état
+Annulé dans les ateliers et un nouveau courrier d’annulation.
 
-## Refaire le passage et tester les erreurs
+Un ancien message non envoyé devenu caduc est écarté. Une information d’un
+autre atelier conserve son échéance ; un message déjà transmis n’est pas rappelé.
 
-Relancer 01 conserve tes changements et annulations. Pour repartir du même état,
-arrêter seulement ton serveur et choisir un **nouveau dossier**, 02 puis 03… :
+### 9 — 7:15 à 8:30 : proposer la réactivation et reconfirmer
 
-```bash
-DEMO_DIRECTORY=var/demo-seance-02 BATCH_WINDOW_SECONDS=60 ./scripts/run_prepared_demo.sh
-```
+Cuisine → Modifier → Actif. Montrer l’option **Proposer aussi la réactivation
+des ateliers dépendants annulés**, laissée **décochée** pour cette étape.
+Vérifier puis confirmer. Dégustation et Accords restent annulés.
 
-Ne pas supprimer tes bases. Pour la soutenance, préparer encore un dossier neuf.
-Les liens préchargés sont dans le dossier choisi, expirent après 48 h et ne doivent
-pas être mélangés avec ceux d’une autre base. Mailpit peut rester ouvert.
+Déconnecter Noé dans la session privée, reconnecter Alice. Son espace signale
+l’atelier réactivé à confirmer. Ouvrir ses choix, sélectionner Cuisine, confirmer
+explicitement puis enregistrer. Les places et conflits sont vérifiés à nouveau.
+Dire : « Réactiver n’a pas réservé automatiquement les anciennes places. »
 
-Hors chronomètre, dans une nouvelle copie : tenter Accords→Cuisine (boucle refusée)
-et une fin de Cuisine à **16:10** (cascade au-delà de 18:00 : refus complet sans
-modification partielle). Une répétition humaine n’est pas remplacée par les tests.
-Si l’aperçu diffère de l’attendu, arrêter avant confirmation et relever le premier écart.
+### 10 — 8:30 à 10:00 : suivre et clôturer
 
-## Contrôles complémentaires
+Chez Thomas : **Participants et exports** → filtrer Alice ou un atelier →
+télécharger un CSV. Les exports restent limités aux événements autorisés.
 
-Dans une nouvelle copie, essayer aussi :
+En dernier, annuler l’événement entier après confirmation : **9 confirmés
+concernés**, même Alex sans atelier. Les invitations/demandes en attente sont
+fermées. Archiver en recopiant le nom de l’événement. Montrer que le programme,
+les participants et le journal restent consultables, avec modifications fermées.
+Les envois dus peuvent encore terminer sous le débit ; les vérifier après le passage.
 
-- Cuisine + Poterie à l’inscription : chevauchement refusé ; Cuisine + Dégustation
-  adjacent autorisé. Atelier complet : refus sans inscription partielle.
-- Thomas ouvre `/organisateur/evenements/demo-fabrique` : 404 ; le carnet partagé
-  ne donne pas les droits sur l’événement de Léa. Un participant ne peut pas ouvrir l’admin.
-- Confirmer fin Cuisine 15:10, puis reporter l’événement d’un jour avant l’envoi :
-  les messages doivent afficher les nouvelles dates réelles des ateliers.
-- Ouvrir un formulaire puis modifier son programme/dépendances dans un autre
-  onglet : confirmation refusée avec 409, nouvel aperçu nécessaire.
-- Deux changements de salle puis retour à la salle initiale avant envoi :
-  historique conservé, aucun message pour ce champ.
-- Après traitement, redémarrer sur la même base : programme, réponses et état lu
-  conservés ; aucun réessai automatique des courriers déjà tentés.
+Si le chronomètre dépasse 10 minutes, terminer après l’export, puis montrer la
+clôture hors chronomètre. Ne pas accélérer en sautant les confirmations.
 
-En cas d’erreur, conserver la base et les messages du terminal ; ne pas la
-réinitialiser pour masquer le problème. Les scénarios indépendants utilisent
-des dossiers distincts pour retrouver les mêmes effectifs de départ.
+## Contrôles complémentaires, hors chronomètre
 
-## Retour après ta répétition
+Utiliser un **nouveau dossier** : `var/demo-cycle2-02`, puis 03… Arrêter le serveur
+et relancer la commande de préparation avec ce dossier. Mailpit peut rester ouvert.
+Ne pas accepter de nouvelles invitations avant de mesurer les 8→4→4.
+
+| Contrôle | Manipulation et résultat attendu |
+|---|---|
+| Création depuis le site | Brouillon Festival → atelier Découverte, Espace démo, 5 places, 14–15 h **le jour affiché du brouillon** → calendrier français et cadran 24 h → enregistrer, publier, retrouver au catalogue |
+| Compte organisateur | Depuis le super-admin, inviter une adresse fictive neuve, ouvrir le courrier dans Mailpit dans une session déconnectée, définir son mot de passe et confirmer son rôle |
+| Invitation existante | Chloé accepte avec son propre compte ; mot de passe et rôle conservés. Julie peut refuser depuis le lien local, sans création de compte |
+| Capacité/conflit | Choisir Cuisine + Poterie : chevauchement refusé avec atelier/horaire. Cuisine + Dégustation adjacent autorisé. Dernière place refusée si déjà prise |
+| Retrait participant | Alice confirme sa désinscription d’un atelier ou de l’événement. Place libérée, planning et cibles en attente recalculés |
+| Retrait organisateur | Participants et exports → Retirer cette personne → un atelier ou l’événement entier → confirmation ; autre atelier conservé si retrait ciblé |
+| Reconfirmation globale | Annuler puis réactiver l’événement : anciennes participations à confirmer, aucune place réservée automatiquement. L’archive ne peut pas être réactivée |
+| Graphe et données | Accords→Cuisine crée une boucle : refus. Une fin Cuisine à 16:10 dépasse 18 h après cascade : refus complet, aucun horaire partiellement enregistré |
+| Contenu cohérent | Salle changée puis retour à sa valeur initiale avant envoi : historique conservé, aucun message pour ce champ. Reporter l’événement après un changement atelier affiche les dates finales réelles |
+| Conflit créé par report | L’aperçu signale le conflit ; la notification participant l’indique également, sans supprimer ses inscriptions |
+| Droits | Thomas ouvre La Fabrique ou son export : 404. Alice n’accède pas à l’admin. Super-admin sur `/espace` : 403. Aucun droit privé ne vient du carnet partagé |
+| Formulaire périmé | Ouvrir deux formulaires, modifier le programme/dépendances dans l’autre onglet : ancien aperçu refusé avec 409 |
+| Thèmes et mobile | Basculer soleil/lune, changer de page et recharger : préférence conservée. Vérifier à 390 px ; graphe défilable dans sa carte, boutons et formulaires utilisables |
+
+### Récupération du mot de passe
+
+Déconnecter le compte de la session de test. Connexion → Mot de passe oublié →
+`demo-nora@example.test`. La réponse publique reste neutre. Ouvrir le nouveau
+courrier dans Mailpit et son lien, choisir une nouvelle phrase de passe d’au
+moins 15 caractères, puis se reconnecter.
+
+Attendu : ancien mot de passe et anciennes sessions invalidés, lien utilisé
+refusé, nouveau lien expirant après 30 minutes. Une nouvelle demande invalide
+la précédente. Une adresse inconnue reçoit la même réponse publique sans e-mail.
+Conserver le nouveau mot de passe localement pour cette base, ou utiliser une
+nouvelle copie pour retrouver le mot de passe fictif initial.
+
+### Échec et relance manuelle
+
+Sur une base neuve avec serveur déjà démarré, arrêter **Mailpit uniquement**
+avec Ctrl+C dans son terminal. Modifier le lieu de Poterie, confirmer et attendre
+60 s. Le journal montre un échec confirmé `mailpit_unavailable` ; le message
+final reste consultable dans l’espace de Nora.
+
+Attendre encore : aucune tentative supplémentaire. Redémarrer `./scripts/mailpit.sh`,
+puis Journal → Relance manuelle → Réessayer une seule fois. Attendu : ancien
+échec conservé, une seconde tentative tracée avec son auteur, nouveau message
+capturé, aucune troisième tentative au double clic. Après succès, plus de relance.
+
+Pour un résultat **incertain**, ne pas cliquer aveuglément : vérifier auprès du
+transport si le message a été accepté. Le formulaire exige cette vérification
+et sa référence avant une nouvelle tentative. Les tests simulent l’interruption
+pendant tentative ; ne pas provoquer une coupure brutale sur ta base de travail.
+
+### Reprise et sauvegarde
+
+Confirmer un changement Poterie ; attendre environ 20 s, arrêter seulement le
+serveur, puis le relancer **sur la même base**. L’échéance reste celle du premier
+changement : elle ne repart pas pour 60 s. Après transmission, un nouveau
+redémarrage ne renvoie pas le même message. Les états lu/non lu persistent.
+
+Les commandes de [sauvegarde et restauration](../README.md#sauvegarder-et-restaurer)
+utilisent de nouveaux fichiers et contrôlent l’intégrité. Vérifier le chemin de
+la base effectivement relancée. Conserver la base en cas d’écart.
+
+## Support, secours et explications
+
+La [préparation de livraison](../README.md#préparer-la-livraison-et-la-soutenance)
+produit un ZIP local, `soutenance.html` et un manifeste SHA-256. La vidéo de
+recette automatique est dans [demo-secours.webm](preuves/demo-secours.webm), intégrable dans
+le ZIP. L’enregistrement continu conserve la fenêtre réelle de 60 s et le débit de
+1 tentative/s. Durée de la vidéo de secours : environ 5 minutes. Elle montre des écrans réels et SMTP local ; elle ne remplace pas une
+répétition humaine chronométrée ni une réception en boîte externe.
+
+Pour expliquer les choix : BFS explore les candidats, ordre topologique pour
+les effets réels, fenêtre fixe plutôt que debouncing, worker unique plutôt
+qu’une infrastructure distribuée, historique des tentatives plutôt qu’une erreur
+écrasée. Les alternatives et la décision d’hébergement sont dans le README.
+Le moteur CLI et ses 92 tests préexistent ; distinguer ce socle des nouveaux
+parcours web, de la persistance et des fonctions des deux cycles.
+
+## Retour de répétition à renseigner
 
 ```text
-Durée totale :
+Durée réelle du passage :
 Dernière étape terminée :
-Deux changements Cuisine confirmés en moins de 60 s : oui/non
-Compteurs avant l’invitation de Noé :
-Écran et compte utilisés lors du problème :
-Action précise et valeurs saisies :
-Résultat attendu / résultat observé :
-Heure et message d’erreur éventuel :
-Passage que je n’arrive pas encore à expliquer :
+Deux confirmations Cuisine dans la même fenêtre : oui/non
+Compteurs avant invitation de Noé :
+Écran, compte et action au premier écart :
+Attendu / observé / message d’erreur / heure :
+Passage technique difficile à expliquer :
+Temps déclaré pour le cycle 2, hors campus compris : environ 3,5 jours-homme (à ajuster si nécessaire)
 ```
 
-Conserver la base et le terminal serveur en cas de problème. Une capture de
-l’écran concerné et les lignes d’erreur aideront à reproduire le cas.
-
-
-## Comptes, données et autres parcours
-
-Les accès complets sont générés dans `var/demo-seance-01/ACCES_DEMO.md`, les liens
-préchargés dans `invitations.html`. Ces liens n’ont pas été envoyés et ne remplacent
-pas la preuve SMTP de l’invitation de Noé. Usage unique, expiration 48 h.
-
-| Compte fictif | Parcours complémentaire |
-|---|---|
-| `admin.demo@example.test` | Super-admin : inviter/révoquer un organisateur, désactiver un accès |
-| `demo-lea@example.test` | Coorganisatrice des Rencontres ; responsable de La Fabrique |
-| `demo-nora@example.test` | Participante épargnée lors d’un changement Cuisine |
-| `demo-alex@example.test` | Confirmé sans atelier aux Rencontres : concerné par un changement global |
-| `demo-chloe@example.test` | Compte existant, invitation aux Rencontres et demande à La Fabrique |
-
-Même mot de passe fictif que Thomas/Alice. Camille et Julie n’ont pas de compte
-avant réponse ; Chloé conserve son mot de passe/rôle en acceptant. La Fabrique est
-ouverte le lendemain ; Festival est un brouillon pour la création en direct.
-
-Pour démontrer l’événement global, après le scénario principal dans une autre
-copie initiale, modifier le lieu de l’événement entier : huit confirmés concernés,
-y compris Alex. Pour les capacités/conflits/droits, utiliser les contrôles complémentaires ci-dessous.
-
-## Parcours depuis une base vide
-
-Pour une présentation centrée sur la création, préparer un autre fichier sans
-charger le seed. Depuis le dépôt, avec l’environnement installé :
-
-```bash
-export DATABASE_URL="sqlite:///$PWD/var/demo-vide-01/impactflow.sqlite3"
-venv/bin/python -m app.cli init-db
-venv/bin/python -m app.cli create-super-admin --email admin@example.test --name "Admin démonstration"
-./scripts/run_demo.sh
-```
-
-Mailpit doit tourner dans l’autre terminal. Le mot de passe admin est saisi
-localement, deux fois ; il n’existe pas de valeur par défaut sur une base vide.
-Ne pas démarrer simultanément le serveur de base prête et celui-ci sur 8000.
-
-1. Inviter un organisateur depuis l’admin ; ouvrir son courrier Mailpit dans
-   une autre session, confirmer le compte puis créer un événement ouvert 14–18 h.
-2. Créer Cuisine 14–15, Dégustation 15–16, Accords 16–17 et Poterie 14–15:30.
-   Ajouter les liens et publier. Montrer le catalogue, puis les invitations.
-3. Ajouter des contacts fictifs via le carnet, inviter Alice et Nora ; accepter
-   Cuisine+Dégustation pour Alice, Poterie pour Nora. Inviter Bruno et Chloé ;
-   refuser Bruno sans compte, garder Chloé en attente.
-4. Refaire le changement de fin Cuisine 15:10 puis 15:20 dans la fenêtre :
-   avec Alice seule sur cette branche, **2 demandes → 1 message → 1 évité**.
-   Les effectifs du parcours principal ne s’appliquent pas à cette petite base.
-
-Ce parcours complet prend davantage de temps ; préparer les réponses avant le
-passage si nécessaire et annoncer clairement ce qui était préparé.
-
-## Questions à préparer à l’oral
-
-| Question | Explication et comparaison |
-|---|---|
-| BFS plutôt que DFS ? | Les deux donnent l’accessibilité ; BFS existe déjà et est testé. Le tri topologique calcule ensuite les horaires après tous les parents. |
-| Pourquoi un graphe ? | Les liens déclarés décrivent les cascades ; une liste fixe oublierait leurs évolutions. |
-| Pourquoi une fenêtre fixe ? | Contrairement au debouncing, des changements continus ne repoussent pas indéfiniment l’échéance. |
-| SQLite plutôt que PostgreSQL ? | Transactions locales sans serveur supplémentaire ; PostgreSQL à réexaminer pour plusieurs instances/concurrence accrue. |
-| Worker local plutôt que Celery ? | Un processus suffit au périmètre local, sans Redis ; une distribution ajouterait exploitation et coordination. |
-| Pourquoi pas de réessai automatique ? | Après un résultat incertain, le transport peut avoir accepté le message : un réessai peut doubler l’envoi. |
-| Mailpit prouve quoi ? | La transmission SMTP et le courrier final capturé localement, pas la réception externe ni l’antispam. |
-| Quel bénéfice mesuré ? | Ici 8→4 messages, 4 évités ; un test métier vérifie 18→6. Aucun benchmark de charge comparatif revendiqué. |
-
-Le [README](../README.md) rassemble architecture, configuration, vérifications
-et état du projet ; les rapports datés restent dans docs/preuves.
-
-## Dépannage et solution de secours
-
-| Problème | Contrôle/action |
-|---|---|
-| Port 8000 occupé | Arrêter le serveur précédent dans son propre terminal puis relancer avec la base choisie |
-| Mailpit indisponible | Vérifier le terminal 1 et le binaire ; installation dans le README |
-| Aucun courrier | Vérifier Mailpit, fenêtre/débit, état du journal et bonne base ; après un échec, aucun réessai automatique |
-| Compteurs différents | Vérifier confirmations dans la fenêtre, invitations acceptées, autres changements confirmés et réutilisation d’une base |
-| Ancien formulaire refusé | Recharger le programme et refaire l’aperçu ; ne pas contourner la révision |
-| Lien expiré/utilisé | Utiliser le dernier courrier de la bonne base ; renvoyer explicitement une invitation si nécessaire |
-
-Si l’application est indisponible, expliquer le schéma de développement et utiliser
-la [vidéo historique de secours](preuves/cycle-1/secours-cycle1.webm) en annonçant
-sa date et ses limites : montage de captures du 22 octobre, pas vidéo continue,
-ni preuve du ciblage corrigé le lendemain. Aucun PNG indépendant n’est conservé.
-Le moteur peut aussi être montré avec `venv/bin/python cli.py` : temps et envois
-simulés, graphe générique distinct des règles de planning du site.
+En cas d’écart : arrêter avant confirmation, conserver la base et relever le
+premier problème avec les lignes utiles du terminal. Les tests et la vidéo
+ne sont pas présentés comme une validation humaine ou une validation du staff.

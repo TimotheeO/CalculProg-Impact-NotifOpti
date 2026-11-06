@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-30",
+  "tests": {
+    "passed": 463,
+    "initial_engine_tests": 92,
+    "new_and_web_tests": 371,
+    "warning_policy": "error",
+    "coverage_measure": "Python lines in app and src",
+    "covered_lines": 3999,
+    "statements": 4426,
+    "coverage_percent": 90.35,
+    "last_seat_concurrency_stability_runs": 8
+  },
+  "browser": {
+    "checks": [
+      "Tableau de bord : six ateliers et graphe natif",
+      "Exploration clavier/souris du diamant",
+      "Mobile 390 px : pas de débordement de la page",
+      "Préférence de thème conservée après navigation",
+      "Changement de salle : deux destinataires, graphe local",
+      "Retard : deux conséquences réelles sur le graphe",
+      "Marge : Vernissage inchangé et Nora seule",
+      "Quatre courriers SMTP finaux, sans intermédiaire ni personne épargnée",
+      "Fusion réelle : 8 demandes, 4 messages, 4 évités",
+      "Boîte personnelle : contenu final persistant",
+      "Annulations SMTP reçues en moins de dix secondes, fenêtre normale de 60 s",
+      "Réactivation proposée, sans option automatique cochée",
+      "Réactivation seule : dépendants laissés annulés",
+      "Nouvelle confirmation visible et aucune place réservée",
+      "Reconfirmation explicite d’Alice, capacité revérifiée",
+      "Récupération : secret retiré de l’adresse",
+      "Connexion avec le nouveau mot de passe",
+      "Super-admin réservé à la gestion",
+      "Accès participant du super-admin refusé",
+      "Filtres et exports accessibles à l’organisateur",
+      "Export CSV réel récupéré depuis la session organisateur",
+      "Échec SMTP conservé, relance manuelle disponible",
+      "Relance manuelle : une nouvelle tentative, ancien échec conservé et SMTP accepté",
+      "Double clic : aucun troisième essai et un seul message SMTP",
+      "Invitation organisateur SMTP, activation et rôle attribué côté serveur",
+      "Événement, deux ateliers, dépendance et publication créés depuis les formulaires",
+      "Nouveau graphe calculé depuis les données créées",
+      "Compte participant créé par acceptation, planning avec deux ateliers",
+      "Sur le nouvel événement : changement, cascade et fusion en un seul courrier SMTP",
+      "Archive : participants et export conservés, retrait masqué",
+      "Isolation : l’autre organisateur ne peut pas lire le journal créé"
+    ],
+    "javascript_errors": [],
+    "mobile_emulation_width": 390,
+    "physical_phone_verified": false
+  },
+  "smtp": {
+    "backend": "Mailpit",
+    "real_smtp_exchange": true,
+    "external_inbox_receipt_proven": false,
+    "window_seconds": 60,
+    "max_attempts_per_second": 1,
+    "attempts": 18,
+    "results": {
+      "accepted": 14,
+      "failed": 4
+    },
+    "minimum_interval_seconds": 1.126727,
+    "failure_and_manual_retry_verified": true
+  },
+  "video": {
+    "file": "docs/preuves/demo-secours.webm",
+    "continuous": true,
+    "seconds": 297.859,
+    "width": 1440,
+    "height": 1040,
+    "sha256": "f2c9e9059911c0e70eb2cdc7c0983180eeaaff809e4df90e6896c188fc8e1130",
+    "fictitious_accounts_only": true
+  },
+  "delivery_smoke": {
+    "unpacked_demo_preparation": true,
+    "accounts": 13,
+    "templates_compiled": true,
+    "schema_checked": true,
+    "health_http": 200,
+    "catalog_http": 200,
+    "graph_asset_http": 200
+  },
+  "student_time": {
+    "cycle2_estimated_days": 4,
+    "cycle2_declared_days": 3.5,
+    "chronometer_based": false
+  },
+  "remaining_external_validation": {
+    "human_rehearsal_done": false,
+    "remote_ci_verified": false,
+    "github_release_published": false,
+    "hosting_deployed": false
+  }
+}

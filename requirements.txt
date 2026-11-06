@@ -1,6 +1,7 @@
 -c constraints.txt
 
 pytest==9.1.1
+coverage==7.17.0
 ruff==0.16.9
 fastapi==0.143.1
 uvicorn==0.54.0

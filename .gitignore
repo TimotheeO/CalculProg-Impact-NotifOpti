@@ -13,3 +13,7 @@ var/
 
 # Consignes locales éventuelles non versionnées.
 /AGENTS.md
+
+# Rapports de couverture locaux.
+.coverage*
+htmlcov/

@@ -173,3 +173,23 @@ td small { display:block; color:var(--muted); margin-top:4px; max-width:230px; }
 .datetime-picker [hidden] { display:none; }
 @media(max-width:620px) { .datetime-picker { padding:20px; } .datetime-panels { grid-template-columns:1fr; gap:24px; } .calendar-days button { min-height:38px; } .datetime-heading h2 { font-size:20px; } }
 @media(max-width:380px) { .contact-search { gap:8px; } .contact-search .button { padding:11px 12px; } }
+
+/* Graphe natif : état lisible au clavier et dans les deux thèmes. */
+.graph-scroll { max-width:100%; overflow-x:auto; padding:8px; }
+.impact-graph { display:block; max-width:none; }
+.graph-node { cursor:pointer; }
+.graph-node rect { fill:var(--card); stroke:var(--muted); stroke-width:2; }
+.graph-node text { fill:var(--text); font:13px system-ui,sans-serif; pointer-events:none; }
+.graph-node .graph-node-state { font-size:11px; }
+.graph-node.graph-source rect { fill:var(--soft); stroke:var(--accent-text); stroke-width:4; }
+.graph-node.graph-cascade rect { fill:var(--soft); stroke:var(--accent-text); stroke-dasharray:7 3; }
+.graph-edge { stroke:var(--muted); stroke-width:2; }
+.graph-arrow { fill:var(--muted); }
+.graph-legend { display:flex; flex-wrap:wrap; gap:14px; font-size:12px; }
+.graph-legend span { padding:4px 9px; border:1px solid var(--line); border-radius:6px; }
+.graph-legend .graph-source { border:2px solid var(--accent-text); }
+.graph-legend .graph-cascade { border:2px dashed var(--accent-text); }
+.filter-grid { display:flex; flex-wrap:wrap; align-items:end; gap:16px; margin:24px 0; }
+.filter-grid label { display:flex; flex-direction:column; gap:5px; }
+.filter-grid input,.filter-grid select { max-width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); font:inherit; }
+details { margin:14px 0; } summary { cursor:pointer; color:var(--accent-text); }

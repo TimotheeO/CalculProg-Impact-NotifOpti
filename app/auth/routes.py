@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -13,6 +14,7 @@ from app.auth.http import (
     home_for,
     read_form,
     render,
+    required_participant,
     required_user,
 )
 from app.auth.security import AuthError, check_csrf
@@ -34,12 +36,15 @@ from app.auth.sessions import (
 from app.mailer import MemoryMailer
 from app.models import (
     AuthAudit,
+    Enrollment,
     Event,
+    Invitation,
     MailDelivery,
     OrganizerInvitation,
     Participation,
     ParticipationRequest,
     User,
+    Workshop,
 )
 
 
@@ -367,7 +372,7 @@ def router():
     def participant(
         request: Request, identity: Annotated[Identity, Depends(current_identity)]
     ):
-        if response := required_user(identity):
+        if response := required_participant(identity):
             return response
         with request.app.state.database.sessions() as session:
             events = list(
@@ -376,7 +381,7 @@ def router():
                     .join(Participation, Participation.event_id == Event.id)
                     .where(
                         Participation.user_id == identity.user.id,
-                        Participation.status == "confirmed",
+                        Participation.status.in_(("confirmed", "pending_confirmation")),
                     )
                     .order_by(Event.starts_at)
                 )
@@ -389,12 +394,59 @@ def router():
                     .order_by(ParticipationRequest.created_at.desc())
                 )
             )
+            from app.participation.lifecycle import personal_planning
+
+            planning = personal_planning(session, identity.user.id)
+            invitations = list(
+                session.scalars(
+                    select(Invitation)
+                    .join(Event, Event.id == Invitation.event_id)
+                    .where(
+                        Invitation.email == identity.user.email,
+                        Invitation.status == "pending",
+                        Invitation.expires_at > request.app.state.clock(),
+                        Event.status == "published",
+                    )
+                    .order_by(Invitation.created_at)
+                )
+            )
+            event_by_id = {
+                e.id: e
+                for e in session.scalars(
+                    select(Event).where(Event.id.in_([i.event_id for i in invitations]))
+                )
+            }
+            participation_states = {
+                p.event_id: p.status
+                for p in session.scalars(
+                    select(Participation).where(
+                        Participation.user_id == identity.user.id
+                    )
+                )
+            }
+            pending_workshops = list(
+                session.scalars(
+                    select(Workshop)
+                    .join(Enrollment, Enrollment.workshop_id == Workshop.id)
+                    .where(
+                        Enrollment.user_id == identity.user.id,
+                        Enrollment.status == "pending_confirmation",
+                        Workshop.status == "active",
+                    )
+                )
+            )
         return render(
             request,
             "auth/participant.html",
             identity,
             events=events,
             participation_requests=requests,
+            planning=planning,
+            invitations=invitations,
+            event_by_id=event_by_id,
+            participation_states=participation_states,
+            pending_workshops=pending_workshops,
+            operation_id=str(uuid4()),
         )
 
     return result

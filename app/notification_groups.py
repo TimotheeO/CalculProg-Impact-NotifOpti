@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy import or_, select
 
-from app.impact import audience, workshop_change_audience
+from app.impact import audience, personal_conflicts, workshop_change_audience
 from app.models import (
     Change,
     Event,
@@ -36,6 +36,7 @@ def targets_for_change(session, change, *, cache=None):
         change.workshop_id,
         change.operation_id,
         change.field == "status" and change.new_value == "cancelled",
+        change.field == "status" and change.new_value in {"active", "published"},
     )
     if cache is not None and key in cache:
         return cache[key]
@@ -62,13 +63,18 @@ def targets_for_change(session, change, *, cache=None):
                     for user_id, reason in result.reasons.items()
                 }
     else:
-        result = audience(session, change.event_id)
+        result = audience(
+            session,
+            change.event_id,
+            reconfirmation=change.field == "status" and change.new_value == "published",
+        )
     if cache is not None:
         cache[key] = result
     return result
 
 
 def attach_change(session, change, user_id, reason, now, window):
+    urgent = change.field == "status" and change.new_value == "cancelled"
     done = session.scalar(
         select(Notification.id)
         .join(NotificationChange, NotificationChange.notification_id == Notification.id)
@@ -93,18 +99,24 @@ def attach_change(session, change, user_id, reason, now, window):
     if existing_link:
         existing_link[0].active = True
         return
-    notification = session.scalar(
-        select(Notification)
-        .where(
-            Notification.event_id == change.event_id,
-            Notification.user_id == user_id,
-            Notification.status == "pending",
-            Notification.due_at > now,
+    notification = (
+        None
+        if urgent
+        else session.scalar(
+            select(Notification)
+            .where(
+                Notification.event_id == change.event_id,
+                Notification.user_id == user_id,
+                Notification.status == "pending",
+                Notification.due_at > now,
+            )
+            .order_by(Notification.opened_at)
+            .limit(1)
         )
-        .order_by(Notification.opened_at)
-        .limit(1)
     )
-    original_due = change.created_at + timedelta(seconds=window)
+    original_due = (
+        change.created_at if urgent else change.created_at + timedelta(seconds=window)
+    )
     if notification is not None:
         if original_due <= now and notification.opened_at > change.created_at:
             # Un ancien groupe en retard ne doit pas faire partir un nouveau groupe trop tôt.
@@ -216,6 +228,7 @@ def recalculate_pending(session, now, window):
         )
     )
     for notification in notifications:
+        previous = (notification.message, notification.reason, notification.urgency)
         body, urgency, reasons, naive = build_content(
             session, notification, target_cache=target_cache
         )
@@ -225,6 +238,8 @@ def recalculate_pending(session, now, window):
             notification.reason,
             notification.naive_requests,
         ) = body, urgency, reasons, naive
+        if previous != (body, reasons, urgency):
+            notification.revision += 1
         if notification.due_at <= now:
             notification.status = "ready" if body else "skipped"
     session.flush()
@@ -273,6 +288,22 @@ def build_content(session, notification, *, target_cache=None):
     parts, urgency = [], 2
     event = session.get(Event, notification.event_id)
     event_cancelled = event.status == "cancelled"
+    if event.status == "archived":
+        previous_state = session.scalar(
+            select(Change)
+            .where(
+                Change.event_id == event.id,
+                Change.workshop_id.is_(None),
+                Change.field == "status",
+                Change.notification_scope == "event",
+            )
+            .order_by(Change.sequence.desc())
+            .limit(1)
+        )
+        event_cancelled = bool(
+            previous_state and previous_state.new_value == "cancelled"
+        )
+    replaced = []
     for (workshop_id, field), (old, new, change) in effective.items():
         if old == new:
             continue
@@ -281,6 +312,14 @@ def build_content(session, notification, *, target_cache=None):
         if (event_cancelled or cancelled) and not (
             field == "status" and new == "cancelled"
         ):
+            replaced.append(
+                {
+                    "change_id": change.id,
+                    "workshop_id": workshop_id,
+                    "field": field,
+                    "reason": "annulation",
+                }
+            )
             continue
         # Une information encore en file et remplacée par un changement plus récent est caduque.
         latest = session.scalar(
@@ -297,11 +336,23 @@ def build_content(session, notification, *, target_cache=None):
             .limit(1)
         )
         if latest and latest.id != change.id and latest.new_value != new:
+            replaced.append(
+                {
+                    "change_id": change.id,
+                    "workshop_id": workshop_id,
+                    "field": field,
+                    "reason": "remplacé",
+                }
+            )
             continue
         title = workshop.name if workshop else "Événement"
         parts.append(
             f"{title} — {FIELD_LABELS.get(field, field)} : {display_value(field, old)} → {display_value(field, new)}"
         )
+        if field == "status" and new in {"active", "published"}:
+            parts.append(
+                "Nouvelle confirmation nécessaire : consultez votre espace pour vérifier les horaires et les places."
+            )
         urgency = min(
             urgency,
             0
@@ -313,4 +364,7 @@ def build_content(session, notification, *, target_cache=None):
         recipients = targets_for_change(session, change, cache=target_cache)
         if notification.user_id in recipients.reasons:
             reasons.add(recipients.reasons[notification.user_id])
+    notification.replaced_fields = replaced
+    if parts and any(field in {"starts_at", "ends_at"} for _, field in effective):
+        parts.extend(personal_conflicts(session, notification.user_id))
     return "\n".join(parts), urgency, " ; ".join(sorted(reasons)), naive

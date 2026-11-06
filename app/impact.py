@@ -24,6 +24,7 @@ def workshop_change_audience(session, event_id, workshop_id, changes):
         event_id,
         workshop_id,
         cancellation=changes.get("status") == "cancelled",
+        reconfirmation=changes.get("status") == "active",
         propagate=False,
     )
 
@@ -65,7 +66,13 @@ def workshop_plan_audience(session, event_id, plan, field=None):
 
 
 def audience(
-    session, event_id, workshop_id=None, *, cancellation=False, propagate=True
+    session,
+    event_id,
+    workshop_id=None,
+    *,
+    cancellation=False,
+    propagate=True,
+    reconfirmation=False,
 ):
     users = list(
         session.scalars(
@@ -73,8 +80,13 @@ def audience(
             .join(Participation, Participation.user_id == User.id)
             .where(
                 Participation.event_id == event_id,
-                Participation.status == "confirmed",
+                Participation.status.in_(
+                    ("confirmed", "pending_confirmation")
+                    if reconfirmation
+                    else ("confirmed",)
+                ),
                 User.is_active.is_(True),
+                User.role != "super_admin",
             )
             .order_by(User.name, User.id)
         )
@@ -96,7 +108,11 @@ def audience(
                 select(Enrollment.user_id).where(
                     Enrollment.event_id == event_id,
                     Enrollment.workshop_id == workshop_id,
-                    Enrollment.status == "active",
+                    Enrollment.status.in_(
+                        ("active", "pending_confirmation")
+                        if reconfirmation
+                        else ("active",)
+                    ),
                 )
             )
         )
@@ -211,3 +227,32 @@ def schedule_conflicts(session, event_id, planned):
                     f"{user.name} : « {workshop.name} » chevaucherait un autre atelier déjà réservé. Les inscriptions seront conservées."
                 )
     return sorted(conflicts)
+
+
+def personal_conflicts(session, user_id):
+    rows = list(
+        session.scalars(
+            select(Workshop)
+            .join(Enrollment, Enrollment.workshop_id == Workshop.id)
+            .join(Event, Event.id == Workshop.event_id)
+            .join(
+                Participation,
+                (Participation.event_id == Enrollment.event_id)
+                & (Participation.user_id == Enrollment.user_id),
+            )
+            .where(
+                Enrollment.user_id == user_id,
+                Enrollment.status == "active",
+                Participation.status == "confirmed",
+                Event.status == "published",
+                Workshop.status == "active",
+            )
+            .order_by(Workshop.starts_at)
+        )
+    )
+    return [
+        f"Conflit horaire : « {left.name} » et « {right.name} » se chevauchent. Vos inscriptions sont conservées ; vérifiez votre planning."
+        for index, left in enumerate(rows)
+        for right in rows[index + 1 :]
+        if left.starts_at < right.ends_at and right.starts_at < left.ends_at
+    ]

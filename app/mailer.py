@@ -28,6 +28,7 @@ class MailMessage:
     html: str = field(repr=False)
     text: str = field(repr=False)
     invitation_url: str = field(repr=False)
+    idempotency_key: str = ""
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,9 @@ class BrevoMailer:
             "subject": message.subject,
             "htmlContent": message.html,
             "textContent": message.text,
+            "headers": {
+                "IdempotencyKey": message.idempotency_key or message.delivery_id
+            },
         }
         try:
             with httpx.Client(
@@ -159,6 +163,7 @@ def compose_message(
     content="",
     reason="",
     expires="",
+    idempotency_key="",
 ):
     url = url or f"{settings.base_url}/espace"
     subjects = {
@@ -187,6 +192,7 @@ def compose_message(
         MAIL_TEMPLATES.get_template(f"{template}.html").render(**context),
         MAIL_TEMPLATES.get_template(f"{template}.txt").render(**context),
         url,
+        idempotency_key,
     )
 
 

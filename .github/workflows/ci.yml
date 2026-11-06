@@ -28,4 +28,6 @@ jobs:
         run: ruff check .
 
       - name: Tests (pytest)
-        run: python -m pytest tests/ -v -W error
+        run: |
+          python -m coverage run --source=app,src -m pytest tests/ -q -W error
+          python -m coverage report --fail-under=85

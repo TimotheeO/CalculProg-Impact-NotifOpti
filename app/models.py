@@ -312,6 +312,18 @@ class AuthSession(CreatedAt, Base):
     pending_event_invitation_id: Mapped[str | None] = mapped_column(
         ForeignKey("invitations.id")
     )
+    pending_password_reset_id: Mapped[str | None] = mapped_column(
+        ForeignKey("password_resets.id")
+    )
+
+
+class PasswordReset(CreatedAt, Base):
+    __tablename__ = "password_resets"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    token_digest: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    used_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
 
 class AuthRateLimit(Base):
@@ -368,6 +380,28 @@ class MailDelivery(CreatedAt, Base):
     attempted_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     provider_id: Mapped[str | None] = mapped_column(String(240))
     error_code: Mapped[str | None] = mapped_column(String(80))
+    password_reset_id: Mapped[str | None] = mapped_column(
+        ForeignKey("password_resets.id")
+    )
+    context: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
+class MailAttempt(Base):
+    __tablename__ = "mail_attempts"
+    __table_args__ = (UniqueConstraint("delivery_id", "number"),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    delivery_id: Mapped[str] = mapped_column(
+        ForeignKey("mail_deliveries.id"), index=True
+    )
+    number: Mapped[int] = mapped_column(Integer)
+    actor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    started_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    status: Mapped[str] = mapped_column(String(20))
+    provider_id: Mapped[str | None] = mapped_column(String(240))
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    content_revision: Mapped[int | None] = mapped_column(Integer)
 
 
 class EventOperation(CreatedAt, Base):
@@ -441,6 +475,10 @@ class Notification(CreatedAt, Base):
     due_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), index=True)
     reason: Mapped[str] = mapped_column(Text, default="", server_default="")
     naive_requests: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    replaced_fields: Mapped[list] = mapped_column(
+        JSON, default=list, server_default="[]"
+    )
 
 
 class NotificationChange(Base):

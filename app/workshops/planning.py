@@ -26,7 +26,9 @@ class WorkshopPlan:
     spared: tuple[str, ...]
 
 
-def plan_change(workshops, dependencies, source_id, proposed):
+def plan_change(
+    workshops, dependencies, source_id, proposed, *, reactivate_dependents=False
+):
     """Ne modifie aucun objet ORM. Une branche qui absorbe le retard s’arrête."""
     current = {w.id: snapshot(w) for w in workshops}
     if source_id not in current:
@@ -38,6 +40,67 @@ def plan_change(workshops, dependencies, source_id, proposed):
     if not fields:
         return WorkshopPlan(source_id, (), ())
     root = PlannedWorkshop(source_id, source, proposed, fields)
+    if source.status == "cancelled" and proposed.status == "active":
+        parents = {key: set() for key in current}
+        graph = EventGraph()
+        for key, value in current.items():
+            graph.add_workshop(key, value.name)
+        for edge in dependencies:
+            graph.add_dependency(edge.base_workshop_id, edge.dependent_workshop_id)
+            parents[edge.dependent_workshop_id].add(edge.base_workshop_id)
+        selected = (
+            compute_impacted_set(graph, source_id).impacted_workshop_ids
+            if reactivate_dependents
+            else {source_id}
+        )
+        try:
+            order = TopologicalSorter(
+                {key: parents[key] & selected for key in selected}
+            ).static_order()
+            final, changes = dict(current), []
+            for key in order:
+                before = current[key]
+                if key != source_id and before.status == "active":
+                    continue
+                after = (
+                    proposed if key == source_id else replace(before, status="active")
+                )
+                if any(final[parent].status != "active" for parent in parents[key]):
+                    raise EventError(
+                        "Réactivez d’abord tous les prérequis de cet atelier.", 409
+                    )
+                required = max(
+                    (final[parent].ends_at for parent in parents[key]),
+                    default=after.starts_at,
+                )
+                if key == source_id and after.starts_at < required:
+                    raise EventError(
+                        "L’atelier réactivé doit commencer après ses prérequis.", 409
+                    )
+                if after.starts_at < required:
+                    after = replace(
+                        after,
+                        starts_at=required,
+                        ends_at=required + (after.ends_at - after.starts_at),
+                    )
+                final[key] = after
+                changes.append(
+                    PlannedWorkshop(
+                        key,
+                        before,
+                        after,
+                        tuple(
+                            f for f in FIELDS if getattr(before, f) != getattr(after, f)
+                        ),
+                        key != source_id,
+                        "Réactivation proposée ; nouvelle confirmation des inscrits nécessaire.",
+                    )
+                )
+            return WorkshopPlan(source_id, tuple(changes), ())
+        except CycleError as error:
+            raise EventError(
+                "Une boucle empêche la réactivation. Corrigez les dépendances.", 409
+            ) from error
     cancelling = "status" in fields and proposed.status == "cancelled"
     scheduling = proposed.status == "active" and bool(
         {"starts_at", "ends_at"} & set(fields)

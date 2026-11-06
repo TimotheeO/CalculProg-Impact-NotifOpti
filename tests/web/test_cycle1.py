@@ -536,6 +536,7 @@ def test_workshop_http_create_preview_confirm_replay_and_error(
 
 def test_concurrent_last_seat_acceptance_is_atomic(seeded_db, web_settings, web_clock):
     from concurrent.futures import ThreadPoolExecutor
+    from contextlib import ExitStack
     from threading import Barrier
 
     with seeded_db.transaction() as session:
@@ -549,23 +550,22 @@ def test_concurrent_last_seat_acceptance_is_atomic(seeded_db, web_settings, web_
         for i in range(2)
     ]
 
-    # Une application se construit au démarrage, avant les requêtes concurrentes.
-    # Ne pas faire concourir les fabriques de schémas Pydantic du harnais de test.
+    # FastAPI compile aussi des routes incluses à leur première utilisation.
+    # Préparer les clients et liens avant la concurrence : le test porte sur
+    # deux acceptations simultanées, pas sur l’initialisation de deux serveurs.
     applications = [create_app(web_settings, clock=web_clock) for _ in tokens]
     simultaneous = Barrier(2)
 
-    def attempt(item):
-        app, token = item
-        with TestClient(app) as client:
-            assert prepare(client, token).status_code == 200
-            simultaneous.wait(timeout=10)
-            return accept(client, workshop_ids=["w1"]).status_code
+    def attempt(client):
+        simultaneous.wait(timeout=10)
+        return accept(client, workshop_ids=["w1"]).status_code
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        assert sorted(pool.map(attempt, zip(applications, tokens, strict=True))) == [
-            303,
-            409,
-        ]
+    with ExitStack() as stack:
+        clients = [stack.enter_context(TestClient(app)) for app in applications]
+        for client, token in zip(clients, tokens, strict=True):
+            assert prepare(client, token).status_code == 200
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            assert sorted(pool.map(attempt, clients)) == [303, 409]
     with seeded_db.sessions() as session:
         assert (
             session.scalar(
@@ -910,12 +910,17 @@ def test_cancel_one_workshop_preserves_other_pending_workshop(
     web_clock.advance(60)
     scheduler = worker(seeded_db, web_settings, web_clock, send_max_per_period=100)
     scheduler.tick()
-    alice = next(
+    alice_messages = [
         m for m in scheduler.mailer.messages if m.recipient == "demo-alice@example.test"
+    ]
+    assert len(alice_messages) == 2
+    cancellation, independent = alice_messages
+    assert "annulé" in cancellation.text and "Lieu à conserver" not in cancellation.text
+    assert "Lieu à conserver" in independent.text
+    assert all(
+        "Lieu devenu caduc" not in mail.text and "Autre lieu caduc" not in mail.text
+        for mail in alice_messages
     )
-    assert "annulé" in alice.text and "Lieu à conserver" in alice.text
-    assert "Lieu devenu caduc" not in alice.text
-    assert "Autre lieu caduc" not in alice.text
     with seeded_db.sessions() as session:
         assert (
             session.get(Enrollment, (EVENT_ID, "demo-alice", "w1")).status == "active"

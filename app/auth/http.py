@@ -6,7 +6,7 @@ from urllib.parse import parse_qs
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 
-from app.auth.security import AuthError, check_csrf
+from app.auth.security import AuthError, check_csrf, ensure_participation_allowed
 from app.auth.sessions import find_session, new_session, session_user, set_cookie
 from app.models import AuthSession, User
 
@@ -97,6 +97,13 @@ def required_user(identity, role=None):
     return None
 
 
+def required_participant(identity):
+    if response := required_user(identity):
+        return response
+    ensure_participation_allowed(identity.user)
+    return None
+
+
 def form_context(request, identity, form):
     check_csrf(
         identity.record,
@@ -128,6 +135,12 @@ def checked_user(request, session, form, role=None):
             403,
         )
     return identity.user
+
+
+def checked_participant(request, session, form):
+    user = checked_user(request, session, form)
+    ensure_participation_allowed(user)
+    return user
 
 
 def render(request, template, identity, *, status=200, token=None, **values):

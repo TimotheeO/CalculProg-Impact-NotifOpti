@@ -2,8 +2,8 @@
 
 (() => {
   const page = location.pathname;
-  if (!['/activation-organisateur', '/invitations'].includes(page)) return;
-  const token = new URLSearchParams(location.hash.slice(1)).get('invitation');
+  if (!['/activation-organisateur', '/invitations', '/reinitialisation'].includes(page)) return;
+  const token = new URLSearchParams(location.hash.slice(1)).get(page === '/reinitialisation' ? 'reset' : 'invitation');
   if (!token) return;
   // Le secret ne doit pas apparaître dans les URL de requête, logs HTTP ou Referer.
   history.replaceState(null, '', location.pathname);

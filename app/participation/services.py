@@ -9,12 +9,13 @@ from app.auth.security import (
     AuthError,
     check_csrf,
     digest,
+    ensure_participation_allowed,
     normalize_email,
     validate_password,
 )
 from app.auth.services import validate_name
 from app.auth.sessions import find_session, new_session, session_user
-from app.events.services import EventError, authorized_event, organizer_actor
+from app.events.services import PARIS, EventError, authorized_event, organizer_actor
 from app.mailer import compose_message
 from app.models import (
     Contact,
@@ -30,6 +31,43 @@ from app.models import (
     Workshop,
 )
 from app.operations import begin_operation, log_action
+
+
+def places_for(session, event_id):
+    counts = dict(
+        session.execute(
+            select(Enrollment.workshop_id, func.count())
+            .join(
+                Participation,
+                (Participation.event_id == Enrollment.event_id)
+                & (Participation.user_id == Enrollment.user_id),
+            )
+            .join(User, User.id == Enrollment.user_id)
+            .where(
+                Enrollment.event_id == event_id,
+                Enrollment.status == "active",
+                Participation.status == "confirmed",
+                User.is_active.is_(True),
+                User.role != "super_admin",
+            )
+            .group_by(Enrollment.workshop_id)
+        ).all()
+    )
+    return {
+        w.id: None if w.capacity is None else max(0, w.capacity - counts.get(w.id, 0))
+        for w in session.scalars(select(Workshop).where(Workshop.event_id == event_id))
+    }
+
+
+def invitable_contacts(session):
+    return list(
+        session.scalars(
+            select(Contact)
+            .outerjoin(User, User.email == Contact.email)
+            .where((User.id.is_(None)) | (User.role != "super_admin"))
+            .order_by(Contact.name, Contact.id)
+        )
+    )
 
 
 def add_contact(session, actor_id, name, email, settings, now):
@@ -114,7 +152,8 @@ def create_invitations(
         raise EventError("Un contact sélectionné n’existe plus. Rechargez le carnet.")
     deliveries, skipped = [], 0
     for contact in contacts:
-        user = session.get(User, contact.user_id) if contact.user_id else None
+        user = session.scalar(select(User).where(User.email == contact.email))
+        ensure_participation_allowed(user)
         if user and not user.is_active:
             raise EventError(f"Le compte de {contact.name} est désactivé.")
         invitation = session.scalar(
@@ -203,6 +242,8 @@ def invitation_action(
     session, settings, event_id, actor_id, invitation_id, action, now, operation_id=None
 ):
     event = authorized_event(session, event_id, actor_id)
+    if event.status == "archived":
+        raise EventError("Une archive reste en lecture seule.", 409)
     _, fresh = begin_operation(
         session,
         event_id,
@@ -246,6 +287,9 @@ def invitation_action(
         raise EventError(
             "Cette invitation ne peut pas être relancée dans son état actuel.", 409
         )
+    ensure_participation_allowed(
+        session.scalar(select(User).where(User.email == invitation.email))
+    )
     token = secrets.token_urlsafe(32)
     _invalidate_queued(session, invitation.id)
     invitation.status, invitation.token_digest, invitation.expires_at = (
@@ -260,12 +304,16 @@ def invitation_action(
 
 
 def prepare_personal_invitation(session, record, token, now):
+    ensure_participation_allowed(session_user(session, record))
     if not token or len(token) > 128:
         raise AuthError("Cette invitation n’est pas valide.", 410)
     invitation = session.scalar(
         select(Invitation).where(Invitation.token_digest == digest(token))
     )
     check_personal_invitation(invitation, now)
+    ensure_participation_allowed(
+        session.scalar(select(User).where(User.email == invitation.email))
+    )
     record.pending_event_invitation_id = invitation.id
 
 
@@ -293,9 +341,11 @@ def personal_context(session, raw_session, now):
             "Cet événement n’accepte plus de réponse à cette invitation.", 409
         )
     existing = session.scalar(select(User).where(User.email == invitation.email))
+    ensure_participation_allowed(existing)
     if existing and not existing.is_active:
         raise AuthError("Cet accès est désactivé. Contactez l’organisateur.", 403)
     current = session_user(session, record)
+    ensure_participation_allowed(current)
     must_login = bool(
         existing
         and existing.password_hash
@@ -305,6 +355,7 @@ def personal_context(session, raw_session, now):
 
 
 def validate_enrollments(session, event, user_id, chosen_ids):
+    ensure_participation_allowed(session.get(User, user_id))
     ids = set(chosen_ids)
     if len(ids) > 100:
         raise EventError("Choisissez au plus 100 ateliers.")
@@ -373,13 +424,14 @@ def validate_enrollments(session, event, user_id, chosen_ids):
                 and other.starts_at < workshop.ends_at
             ):
                 raise EventError(
-                    f"« {workshop.name} » chevauche « {other.name} ». Choisissez des créneaux compatibles.",
+                    f"« {workshop.name} » chevauche « {other.name} » ({other.starts_at.astimezone(PARIS).strftime('%d/%m/%Y %H:%M')}–{other.ends_at.astimezone(PARIS).strftime('%H:%M')}). Choisissez des créneaux compatibles.",
                     409,
                 )
     return selected
 
 
 def replace_enrollments(session, event, user_id, selected, now):
+    ensure_participation_allowed(session.get(User, user_id))
     ids = {w.id for w in selected}
     current = {
         row.workshop_id: row
@@ -390,7 +442,10 @@ def replace_enrollments(session, event, user_id, selected, now):
         )
     }
     for workshop_id, enrollment in current.items():
-        if enrollment.status == "active" and workshop_id not in ids:
+        if (
+            enrollment.status in {"active", "pending_confirmation"}
+            and workshop_id not in ids
+        ):
             enrollment.status = "cancelled"
     for workshop in selected:
         if workshop.id in current:
@@ -545,6 +600,7 @@ def decline_personal_invitation(session, raw_session, form, origin, settings, no
 
 
 def _pending_request(session, event, user_id, now):
+    ensure_participation_allowed(session.get(User, user_id))
     participation = session.get(Participation, (event.id, user_id))
     if participation and participation.status == "confirmed":
         raise EventError("Votre participation est déjà confirmée.", 409)
@@ -563,6 +619,7 @@ def _pending_request(session, event, user_id, now):
 
 
 def public_request(session, settings, event, user, email, name, now):
+    ensure_participation_allowed(user)
     if event.status != "published" or event.participation_mode != "open":
         raise EventError("Cet événement n’accepte pas de demande publique.", 404)
     if user:
@@ -570,6 +627,9 @@ def public_request(session, settings, event, user, email, name, now):
         return []
     email = normalize_email(email, development=settings.environment != "production")
     name = validate_name(name)
+    existing = session.scalar(select(User).where(User.email == email))
+    if existing and (existing.role == "super_admin" or not existing.is_active):
+        return []  # Même réponse neutre, sans envoyer d’invitation à un compte de gestion.
     invitation = session.scalar(
         select(Invitation).where(
             Invitation.event_id == event.id, Invitation.email == email
@@ -625,6 +685,8 @@ def decide_request(session, settings, event_id, actor_id, user_id, accepted, now
         raise EventError("Cette demande a déjà été traitée.", 409)
     if not user.is_active:
         raise EventError("Ce compte est désactivé.", 409)
+    if accepted:
+        ensure_participation_allowed(user)
     request.status = desired
     if accepted:
         participation = session.get(Participation, (event_id, user_id))
@@ -673,4 +735,9 @@ def decide_request(session, settings, event_id, actor_id, user_id, accepted, now
         content=content,
     )
     row.subject = message.subject
+    row.context = {
+        "subject": message.subject,
+        "html": message.html,
+        "text": message.text,
+    }
     return [(row.id, message)]

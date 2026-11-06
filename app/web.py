@@ -13,16 +13,21 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.auth.http import Identity, current_identity, home_for
+from app.auth.recovery import router as recovery_router
 from app.auth.routes import router as auth_router
 from app.auth.security import AuthError
 from app.config import ROOT, Settings
+from app.dashboard import router as dashboard_router
 from app.database import Database
+from app.events.management import router as event_management_router
 from app.events.routes import router as events_router
 from app.events.services import EventError
 from app.journal import router as journal_router
 from app.mailer import make_mailer
 from app.models import Event, Workshop, utc_now
+from app.participation.actions import router as participation_actions_router
 from app.participation.routes import router as participation_router
+from app.participation.services import places_for
 from app.worker import Scheduler
 from app.workshops.routes import router as workshops_router
 
@@ -80,10 +85,14 @@ def create_app(
     application.state.scheduler = scheduler
     application.state.templates = TEMPLATES
     application.include_router(auth_router())
+    application.include_router(recovery_router())
     application.include_router(events_router())
+    application.include_router(event_management_router())
     application.include_router(workshops_router())
     application.include_router(participation_router())
+    application.include_router(participation_actions_router())
     application.include_router(journal_router())
+    application.include_router(dashboard_router())
     application.mount(
         "/static", StaticFiles(directory=ROOT / "app" / "static"), name="static"
     )
@@ -100,6 +109,8 @@ def create_app(
                 "/admin",
                 "/organisateur",
                 "/espace",
+                "/mot-de-passe-oublie",
+                "/reinitialisation",
             )
         )
         response.headers["Referrer-Policy"] = "same-origin"
@@ -266,12 +277,14 @@ def create_app(
                     .order_by(Workshop.starts_at, Workshop.id)
                 )
             )
+            places = places_for(session, event.id)
         return TEMPLATES.TemplateResponse(
             request=request,
             name="event.html",
             context={
                 "event": event,
                 "workshops": workshops,
+                "places": places,
                 "viewer": identity.user,
                 "csrf_token": identity.record.csrf_token if identity.record else "",
             },

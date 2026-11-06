@@ -452,6 +452,75 @@ def cancel_event(
     )
     change.operation_id, change.notification_scope = operation.id, "event"
     event.status = "cancelled"
+    for invitation in session.scalars(
+        select(Invitation).where(
+            Invitation.event_id == event_id, Invitation.status == "pending"
+        )
+    ):
+        invitation.status = "revoked"
+    for request in session.scalars(
+        select(ParticipationRequest).where(
+            ParticipationRequest.event_id == event_id,
+            ParticipationRequest.status == "pending",
+        )
+    ):
+        request.status = "withdrawn"
     session.flush()
     enqueue_changes(session, [change], now, window)
+    return event
+
+
+def change_event_state(
+    session, event_id, actor_id, action, expected, now, *, operation_id=None, window=60
+):
+    from app.notification_groups import enqueue_changes
+    from app.operations import begin_operation, log_action
+
+    event = authorized_event(session, event_id, actor_id)
+    operation, fresh = begin_operation(
+        session,
+        event_id,
+        actor_id,
+        "event_" + action,
+        {"revision": expected},
+        now,
+        operation_id,
+    )
+    if not fresh:
+        return event
+    check_revision(event, workshops_for(session, event.id), expected)
+    old = event.status
+    if action == "archiver":
+        if old != "cancelled" and not (old == "published" and event.ends_at <= now):
+            raise EventError(
+                "Annulez l’événement ou attendez sa fin avant de l’archiver.", 409
+            )
+        event.status = "archived"
+        record_change(session, event, actor_id, "status", old, "archived", now)
+    elif action == "reactiver":
+        if old != "cancelled":
+            raise EventError("Seul un événement annulé peut être réactivé.", 409)
+        event.status = "published"
+        for participation in session.scalars(
+            select(Participation).where(
+                Participation.event_id == event_id, Participation.status == "confirmed"
+            )
+        ):
+            participation.status = "pending_confirmation"
+        for enrollment in session.scalars(
+            select(Enrollment).where(
+                Enrollment.event_id == event_id, Enrollment.status == "active"
+            )
+        ):
+            enrollment.status = "pending_confirmation"
+        change = record_change(
+            session, event, actor_id, "status", old, "published", now
+        )
+        change.operation_id, change.notification_scope = operation.id, "event"
+        session.flush()
+        enqueue_changes(session, [change], now, window)
+    else:
+        raise EventError("Action introuvable.", 404)
+    log_action(session, event_id, actor_id, "event_" + action, now)
+    session.flush()
     return event

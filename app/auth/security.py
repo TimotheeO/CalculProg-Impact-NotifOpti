@@ -17,6 +17,14 @@ class AuthError(DomainError):
         self.status = status
 
 
+def ensure_participation_allowed(user):
+    if user is not None and user.role == "super_admin":
+        raise AuthError(
+            "Le compte super-admin est réservé à la gestion. Utilisez un compte personnel distinct pour participer.",
+            403,
+        )
+
+
 def digest(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 

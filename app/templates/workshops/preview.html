@@ -1,4 +1,5 @@
 {% extends 'base.html' %}{% block title %}Aperçu du changement — ImpactFlow{% endblock %}
+{% block scripts %}<script defer src="/static/graph.js"></script>{% endblock %}
 {% block content %}
 <a class="back" href="{{ url_for('workshop_detail', event_id=event.id, workshop_id=workshop.id) }}">← Revenir à la version enregistrée</a>
 <section class="space-heading"><div><p class="eyebrow">AVANT CONFIRMATION · {{ event.name }}</p><h1>{{ workshop.name }}</h1><p class="intro">Vérifiez le contenu et les personnes réellement concernées.</p></div></section>
@@ -11,5 +12,6 @@
 {% else %}<p>Avant : {{ row.before.starts_at|paris_date }} — {{ row.before.ends_at|paris_date }}</p><p>Après : <strong>{{ row.after.starts_at|paris_date }} — {{ row.after.ends_at|paris_date }}</strong></p>{% endif %}</article>{% endfor %}</section>{% endif %}
 {% if spared_dependents %}<section class="data-section card"><h2>Ateliers dépendants inchangés</h2><p>{{ 'Ces ateliers étaient déjà annulés.' if proposed.status == 'cancelled' else 'Leur marge absorbe le décalage.' }} Aucune notification ne sera créée pour ces ateliers.</p><ul>{% for item in spared_dependents %}<li>{{ item.name }} · {{ item.starts_at|paris_date }} — {{ item.ends_at|paris_date }}</li>{% endfor %}</ul></section>{% endif %}
 {% include 'shared/impact.html' %}
-<form method="post" class="page-actions" id="confirm-workshop-change"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="operation_id" value="{{ operation_id }}">{% for field,value in values.items() %}<input type="hidden" name="{{ field }}" value="{{ value }}">{% endfor %}<button class="small-button" name="action" value="revise">Reprendre la saisie</button><button class="button" name="action" value="confirm">Confirmer les modifications →</button></form>
+{% include 'shared/graph.html' %}
+<form method="post" class="page-actions" id="confirm-workshop-change">{% if reactivate_dependents %}<input type="hidden" name="reactivate_dependents" value="yes">{% endif %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="operation_id" value="{{ operation_id }}">{% for field,value in values.items() %}<input type="hidden" name="{{ field }}" value="{{ value }}">{% endfor %}<button class="small-button" name="action" value="revise">Reprendre la saisie</button><button class="button" name="action" value="confirm">Confirmer les modifications →</button></form>
 {% endblock %}

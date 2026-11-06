@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ event.name }} — Organisation — ImpactFlow{% endblock %}
-{% block content %}<nav class="event-sections" aria-label="Outils de l’événement"><a href="/organisateur/evenements/{{ event.id }}/ateliers/nouveau">Créer un atelier</a><a href="/organisateur/evenements/{{ event.id }}/dependances">Dépendances</a><a href="/organisateur/evenements/{{ event.id }}/invitations">Invitations</a><a href="/organisateur/evenements/{{ event.id }}/journal">Journal et envois</a>{% if event.status=='published' %}<a href="/organisateur/evenements/{{ event.id }}/annuler">Annuler l’événement</a>{% endif %}</nav>
+{% block content %}<nav class="event-sections" aria-label="Outils de l’événement"><a href="/organisateur/evenements/{{ event.id }}/tableau-de-bord">Tableau de bord et graphe</a><a href="/organisateur/evenements/{{ event.id }}/participants">Participants et exports</a><a href="/organisateur/evenements/{{ event.id }}/ateliers/nouveau">Créer un atelier</a><a href="/organisateur/evenements/{{ event.id }}/dependances">Dépendances</a><a href="/organisateur/evenements/{{ event.id }}/invitations">Invitations</a><a href="/organisateur/evenements/{{ event.id }}/journal">Journal et envois</a>{% if event.status=='published' %}<a href="/organisateur/evenements/{{ event.id }}/annuler">Annuler l’événement</a>{% endif %}</nav>
 {% set states={'draft':'Brouillon','published':'Publié','cancelled':'Annulé','archived':'Archivé'} %}
 <a class="back" href="{{ url_for('organizer') }}">← Mes événements</a>
 <section class="space-heading">
@@ -54,4 +54,4 @@
   </tbody></table></div></div>
   {% endif %}
 </section>
-{% endblock %}
+<section class="page-actions">{% if event.status == "cancelled" %}<a class="button secondary" href="/organisateur/evenements/{{ event.id }}/etat/reactiver">Réactiver avec nouvelle confirmation</a>{% endif %}{% if event.status in ['cancelled','published'] %}<a class="small-button" href="/organisateur/evenements/{{ event.id }}/etat/archiver">Archiver après clôture</a>{% endif %}</section>{% endblock %}

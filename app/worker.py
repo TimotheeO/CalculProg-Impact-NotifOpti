@@ -10,14 +10,17 @@ from uuid import uuid4
 
 from sqlalchemy import func, select
 
+from app.deliveries import rebuild_message
 from app.mailer import MailResult, MemoryMailer, compose_message
 from app.models import (
     Event,
     Invitation,
+    MailAttempt,
     MailDelivery,
     Notification,
     OrganizerInvitation,
     Participation,
+    PasswordReset,
     User,
 )
 from app.notification_groups import recalculate_pending
@@ -58,15 +61,26 @@ class Scheduler:
                     session.scalars(
                         select(MailDelivery.attempted_at)
                         .where(
+                            MailDelivery.attempt_count == 0,
                             MailDelivery.attempted_at
                             > self.clock()
-                            - timedelta(seconds=self.settings.send_period_seconds)
+                            - timedelta(seconds=self.settings.send_period_seconds),
                         )
                         .order_by(MailDelivery.attempted_at.desc())
                         .limit(self.settings.send_max_per_period)
                     )
                 )
-            for timestamp in reversed(attempts):
+                attempts.extend(
+                    session.scalars(
+                        select(MailAttempt.started_at).where(
+                            MailAttempt.started_at
+                            > self.clock()
+                            - timedelta(seconds=self.settings.send_period_seconds)
+                        )
+                    )
+                )
+                attempts = sorted(attempts)[-self.settings.send_max_per_period :]
+            for timestamp in attempts:
                 marker[0] = timestamp.timestamp()
                 limiter.try_acquire()
             self._limiter, self._marker = limiter, marker
@@ -74,15 +88,39 @@ class Scheduler:
         return self._limiter
 
     def submit(self, delivery_id, message):
-        with self._queue_lock:
-            if len(self._payloads) >= 1000 and delivery_id not in self._payloads:
-                with self.database.transaction(immediate=True) as session:
-                    row = session.get(MailDelivery, delivery_id)
-                    row.status, row.error_code = "failed", "local_queue_full"
-                return
-            self._payloads[delivery_id] = message
-        if isinstance(self.mailer, MemoryMailer):
-            self.tick()
+        with self._lock:
+            with self.database.transaction(immediate=True) as session:
+                row = session.get(MailDelivery, delivery_id)
+                if row is None or row.status != "pending":
+                    return
+                if (
+                    row.invitation_id
+                    or row.event_invitation_id
+                    or row.password_reset_id
+                ):
+                    message = rebuild_message(session, self.settings, row, self.clock())
+                    row.subject = message.subject
+                if row and not (
+                    row.invitation_id
+                    or row.event_invitation_id
+                    or row.notification_id
+                    or row.password_reset_id
+                ):
+                    row.context = {
+                        **(row.context or {}),
+                        "subject": message.subject,
+                        "html": message.html,
+                        "text": message.text,
+                    }
+            with self._queue_lock:
+                if len(self._payloads) >= 1000 and delivery_id not in self._payloads:
+                    with self.database.transaction(immediate=True) as session:
+                        row = session.get(MailDelivery, delivery_id)
+                        row.status, row.error_code = "failed", "local_queue_full"
+                    return
+                self._payloads[delivery_id] = message
+            if isinstance(self.mailer, MemoryMailer):
+                self.tick()
 
     def submit_organizer(self, invitation_id, token):
         with self.database.transaction(immediate=True) as session:
@@ -120,6 +158,7 @@ class Scheduler:
             event_name=event.name,
             content=notification.message,
             reason=notification.reason,
+            idempotency_key=f"{delivery.id}:{notification.revision}",
         )
 
     def _prepare_groups(self):
@@ -168,18 +207,34 @@ class Scheduler:
         now = self.clock()
         if delivery.user_id:
             recipient = session.get(User, delivery.user_id)
-            if recipient is None or not recipient.is_active:
+            if (
+                recipient is None
+                or not recipient.is_active
+                or (delivery.event_id and recipient.role == "super_admin")
+            ):
                 return False
         if delivery.invitation_id:
             invitation = session.get(OrganizerInvitation, delivery.invitation_id)
             return invitation.status == "pending" and invitation.expires_at > now
+        if delivery.password_reset_id:
+            reset = session.get(PasswordReset, delivery.password_reset_id)
+            return (
+                reset is not None and reset.used_at is None and reset.expires_at > now
+            )
         if delivery.event_invitation_id:
             invitation = session.get(Invitation, delivery.event_invitation_id)
             event = session.get(Event, invitation.event_id)
+            recipient = session.scalar(
+                select(User).where(User.email == invitation.email)
+            )
             return (
                 invitation.status == "pending"
                 and invitation.expires_at > now
                 and event.status == "published"
+                and (
+                    recipient is None
+                    or (recipient.is_active and recipient.role != "super_admin")
+                )
             )
         if delivery.notification_id:
             notification = session.get(Notification, delivery.notification_id)
@@ -195,7 +250,10 @@ class Scheduler:
                 participation = session.get(
                     Participation, (notification.event_id, notification.user_id)
                 )
-                return participation is not None and participation.status == "confirmed"
+                return participation is not None and participation.status in {
+                    "confirmed",
+                    "pending_confirmation",
+                }
         return True
 
     def _priority(self, delivery_id):
@@ -211,6 +269,29 @@ class Scheduler:
     def tick(self):
         with self._lock:
             self._prepare_groups()
+            with self.database.transaction(immediate=True) as session:
+                for delivery in session.scalars(
+                    select(MailDelivery)
+                    .where(
+                        MailDelivery.status == "pending",
+                        MailDelivery.notification_id.is_(None),
+                    )
+                    .order_by(MailDelivery.created_at)
+                    .limit(1000)
+                ):
+                    if delivery.id not in self._payloads:
+                        if not self._still_relevant(session, delivery):
+                            delivery.status, delivery.error_code = (
+                                "failed",
+                                "no_longer_relevant",
+                            )
+                            continue
+                        message = rebuild_message(
+                            session, self.settings, delivery, self.clock()
+                        )
+                        if message:
+                            self._payloads[delivery.id] = message
+                            delivery.subject = message.subject
             with self._queue_lock:
                 pending_ids = list(self._payloads)
             for delivery_id in sorted(pending_ids, key=self._priority):
@@ -241,7 +322,14 @@ class Scheduler:
                     daily = session.scalar(
                         select(func.count())
                         .select_from(MailDelivery)
-                        .where(MailDelivery.attempted_at >= midnight)
+                        .where(
+                            MailDelivery.attempted_at >= midnight,
+                            MailDelivery.attempt_count == 0,
+                        )
+                    ) + session.scalar(
+                        select(func.count())
+                        .select_from(MailAttempt)
+                        .where(MailAttempt.started_at >= midnight)
                     )
                     if (
                         daily >= self.settings.send_daily_limit
@@ -254,6 +342,22 @@ class Scheduler:
                         else self._payloads[delivery_id]
                     )
                     delivery.status, delivery.attempted_at = "sending", self.clock()
+                    delivery.attempt_count += 1
+                    attempt = MailAttempt(
+                        id=str(uuid4()),
+                        delivery_id=delivery.id,
+                        number=delivery.attempt_count,
+                        actor_id=(delivery.context or {}).get("retry_actor_id"),
+                        started_at=self.clock(),
+                        status="sending",
+                        content_revision=session.get(
+                            Notification, delivery.notification_id
+                        ).revision
+                        if delivery.notification_id
+                        else None,
+                    )
+                    session.add(attempt)
+                    attempt_id = attempt.id
                     if delivery.notification_id:
                         session.get(
                             Notification, delivery.notification_id
@@ -269,6 +373,18 @@ class Scheduler:
                         result.status,
                         result.provider_id,
                         result.error_code,
+                    )
+                    attempt = session.get(MailAttempt, attempt_id)
+                    (
+                        attempt.status,
+                        attempt.provider_id,
+                        attempt.error_code,
+                        attempt.finished_at,
+                    ) = (
+                        result.status,
+                        result.provider_id,
+                        result.error_code,
+                        self.clock(),
                     )
                     if delivery.notification_id:
                         session.get(Notification, delivery.notification_id).status = (
@@ -307,15 +423,21 @@ class Scheduler:
                         "uncertain",
                         "interrupted_during_attempt",
                     )
+                    for attempt in session.scalars(
+                        select(MailAttempt).where(
+                            MailAttempt.delivery_id == delivery.id,
+                            MailAttempt.status == "sending",
+                        )
+                    ):
+                        attempt.status, attempt.error_code, attempt.finished_at = (
+                            "uncertain",
+                            "interrupted_during_attempt",
+                            self.clock(),
+                        )
                     if delivery.notification_id:
                         session.get(
                             Notification, delivery.notification_id
                         ).status = "uncertain"
-                elif delivery.notification_id is None:
-                    delivery.status, delivery.error_code = (
-                        "failed",
-                        "interrupted_before_attempt",
-                    )
         self._stop.clear()
         self._thread = threading.Thread(
             target=self._run, name="impactflow-scheduler", daemon=True

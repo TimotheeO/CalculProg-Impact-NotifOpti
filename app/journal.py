@@ -3,6 +3,7 @@
 import hashlib
 import json
 from typing import Annotated
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -10,14 +11,25 @@ from sqlalchemy import select
 
 from app.auth.http import (
     Identity,
+    checked_participant,
     checked_user,
     current_identity,
     read_selection,
     render,
+    required_participant,
     required_user,
 )
+from app.deliveries import retry_delivery
 from app.events.services import EventError, authorized_event
-from app.models import Change, EventAction, MailDelivery, Notification, User
+from app.models import (
+    Change,
+    Event,
+    EventAction,
+    MailAttempt,
+    MailDelivery,
+    Notification,
+    User,
+)
 
 MAIL_STATES = {
     "pending": "En file",
@@ -127,6 +139,15 @@ def router():
         event, rows, mail, stats, changes, actions, users = event_data(
             request, event_id, identity
         )
+        with request.app.state.database.sessions() as session:
+            attempts = list(
+                session.scalars(
+                    select(MailAttempt)
+                    .join(MailDelivery, MailDelivery.id == MailAttempt.delivery_id)
+                    .where(MailDelivery.event_id == event_id)
+                    .order_by(MailAttempt.started_at.desc())
+                )
+            )
         return render(
             request,
             "journal.html",
@@ -144,6 +165,8 @@ def router():
             live_revision=fingerprint(rows, mail, changes, actions),
             worker_error=request.app.state.scheduler.last_error,
             settings=request.app.state.settings,
+            attempts=attempts,
+            retry_operations={m.id: str(uuid4()) for m in mail},
         )
 
     @result.get("/organisateur/evenements/{event_id}/journal/etat")
@@ -157,18 +180,54 @@ def router():
         _, rows, mail, _, changes, actions, _ = event_data(request, event_id, identity)
         return JSONResponse({"revision": fingerprint(rows, mail, changes, actions)})
 
+    @result.post("/organisateur/evenements/{event_id}/envois/{delivery_id}/reessayer")
+    def retry(
+        request: Request,
+        event_id: str,
+        delivery_id: str,
+        form: Annotated[dict, Depends(read_selection)],
+    ):
+        with request.app.state.database.transaction(immediate=True) as session:
+            user = checked_user(request, session, form, "organizer")
+            retry_delivery(
+                session,
+                event_id,
+                delivery_id,
+                user.id,
+                form.get("operation_id"),
+                request.app.state.clock(),
+                reviewed=form.get("reviewed") == "yes",
+                note=form.get("note", ""),
+            )
+        from app.mailer import MemoryMailer
+
+        if isinstance(request.app.state.mailer, MemoryMailer):
+            request.app.state.scheduler.tick()
+        return RedirectResponse(
+            f"/organisateur/evenements/{event_id}/journal", status_code=303
+        )
+
     @result.get("/espace/notifications", name="notification_box")
     def box(request: Request, identity: Annotated[Identity, Depends(current_identity)]):
-        if response := required_user(identity):
+        if response := required_participant(identity):
             return response
         with request.app.state.database.sessions() as session:
             rows, mail, _ = snapshot(session, user_id=identity.user.id)
+            archived_event_ids = set(
+                session.scalars(
+                    select(Event.id).where(
+                        Event.status == "archived",
+                        Event.id.in_([n.event_id for n in rows]),
+                    )
+                )
+            )
         return render(
             request,
             "participation/notifications.html",
             identity,
             notifications=rows,
             deliveries=mail,
+            archived_event_ids=archived_event_ids,
             mail_states=MAIL_STATES,
             notification_states=NOTIFICATION_STATES,
             live_url="/espace/notifications/etat",
@@ -179,7 +238,7 @@ def router():
     def box_state(
         request: Request, identity: Annotated[Identity, Depends(current_identity)]
     ):
-        if response := required_user(identity):
+        if response := required_participant(identity):
             return response
         with request.app.state.database.sessions() as session:
             rows, mail, _ = snapshot(session, user_id=identity.user.id)
@@ -192,10 +251,14 @@ def router():
         form: Annotated[dict, Depends(read_selection)],
     ):
         with request.app.state.database.transaction(immediate=True) as session:
-            user = checked_user(request, session, form)
+            user = checked_participant(request, session, form)
             row = session.get(Notification, notification_id)
             if not row or row.user_id != user.id:
                 raise EventError("Notification introuvable.", 404)
+            if session.get(Event, row.event_id).status == "archived":
+                raise EventError(
+                    "Les notifications d’une archive restent en lecture seule.", 409
+                )
             if row.status not in {"pending", "skipped"}:
                 row.read_at = request.app.state.clock()
         return RedirectResponse("/espace/notifications", status_code=303)

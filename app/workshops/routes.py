@@ -14,6 +14,7 @@ from app.auth.http import (
     render,
     required_user,
 )
+from app.dashboard import graph_data
 from app.events.services import (
     PARIS,
     EventError,
@@ -244,6 +245,8 @@ def router():
                         request.app.state.clock(),
                         operation_id=form.get("operation_id"),
                         window=request.app.state.settings.batch_window_seconds,
+                        reactivate_dependents=form.get("reactivate_dependents")
+                        == "yes",
                     )
                 else:
                     event, workshop, plan = preview_workshop(
@@ -253,6 +256,8 @@ def router():
                         user.id,
                         data,
                         form.get("revision", ""),
+                        reactivate_dependents=form.get("reactivate_dependents")
+                        == "yes",
                     )
                     changed = next(
                         (
@@ -283,6 +288,12 @@ def router():
                         ],
                     )
                     spared_dependents = [by_id[key] for key in plan.spared]
+                    visual_graph = graph_data(
+                        session,
+                        event_id,
+                        source_id=workshop_id,
+                        changed_ids=[row.workshop_id for row in plan.changes],
+                    )
             if form["action"] == "revise":
                 return form_page(
                     request,
@@ -308,6 +319,8 @@ def router():
                     impact=impact,
                     impact_by_field=impact_by_field,
                     cascade_plan=plan,
+                    graph=visual_graph,
+                    reactivate_dependents=form.get("reactivate_dependents") == "yes",
                     spared_dependents=spared_dependents,
                     conflicts=conflicts,
                 )

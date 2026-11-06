@@ -9,16 +9,18 @@ from sqlalchemy import select
 
 from app.auth.http import (
     Identity,
+    checked_participant,
     checked_user,
     current_identity,
     ensure_form_identity,
     form_context,
     read_selection,
     render,
+    required_participant,
     required_user,
     transaction_identity,
 )
-from app.auth.security import AuthError
+from app.auth.security import AuthError, ensure_participation_allowed
 from app.auth.services import consume_limit
 from app.auth.sessions import set_cookie
 from app.events.services import EventError, authorized_event, workshops_for
@@ -100,9 +102,7 @@ def router():
             return response
         with request.app.state.database.sessions() as session:
             event = authorized_event(session, event_id, identity.user.id)
-            contacts = list(
-                session.scalars(select(Contact).order_by(Contact.name, Contact.id))
-            )
+            contacts = services.invitable_contacts(session)
             invitations = list(
                 session.scalars(
                     select(Invitation)
@@ -179,6 +179,7 @@ def router():
 
     def personal_page(request, *, error=None, status=200):
         identity, token = ensure_form_identity(request)
+        ensure_participation_allowed(identity.user)
         context = {
             "invitation": None,
             "error": str(error) if error else None,
@@ -211,6 +212,7 @@ def router():
                     name=existing.name if existing else invitation.invitee_name or "",
                     workshops=workshops_for(session, event.id),
                     chosen=chosen,
+                    places=services.places_for(session, event.id),
                 )
             except AuthError as issue:
                 if identity.record.pending_event_invitation_id and error is None:
@@ -287,6 +289,7 @@ def router():
     @result.get("/events/{slug}/demander", name="participation_request")
     def request_page(request: Request, slug: str):
         identity, token = ensure_form_identity(request)
+        ensure_participation_allowed(identity.user)
         with request.app.state.database.sessions() as session:
             event = session.scalar(
                 select(Event).where(
@@ -370,11 +373,12 @@ def router():
         event_id: str,
         identity: Annotated[Identity, Depends(current_identity)],
     ):
-        if response := required_user(identity):
+        if response := required_participant(identity):
             return response
         with request.app.state.database.sessions() as session:
             event = enrollment_context(session, event_id, identity.user.id)
             workshops = workshops_for(session, event_id)
+            places = services.places_for(session, event_id)
             chosen = list(
                 session.scalars(
                     select(Enrollment.workshop_id).where(
@@ -391,6 +395,7 @@ def router():
             event=event,
             workshops=workshops,
             chosen=chosen,
+            places=places,
         )
 
     @result.post("/espace/evenements/{event_id}/ateliers")
@@ -398,7 +403,7 @@ def router():
         request: Request, event_id: str, form: Annotated[dict, Depends(read_selection)]
     ):
         with request.app.state.database.transaction(immediate=True) as session:
-            user = checked_user(request, session, form)
+            user = checked_participant(request, session, form)
             event = enrollment_context(session, event_id, user.id)
             selected = services.validate_enrollments(
                 session, event, user.id, form.get("workshop_ids", [])

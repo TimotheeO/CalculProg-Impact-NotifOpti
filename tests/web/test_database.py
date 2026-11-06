@@ -28,7 +28,7 @@ def test_migration_is_repeatable_and_preserves_existing_data(seeded_db):
     seeded_db.check_schema()
     with seeded_db.sessions() as session:
         assert session.get(User, "demo-alice").name == "Alice Martin"
-        assert session.scalar(text("SELECT version_num FROM alembic_version")) == "0003"
+        assert session.scalar(text("SELECT version_num FROM alembic_version")) == "0004"
     with seeded_db.engine.connect() as connection:
         assert (
             compare_metadata(MigrationContext.configure(connection), Base.metadata)

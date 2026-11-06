@@ -114,25 +114,15 @@ def validate_program(session, event, workshop, data):
                 "ends_at": "Vérifiez la période de l’événement.",
             },
         )
-    count = len(active_enrollments(session, workshop)) if workshop else 0
+    count = (
+        len(active_enrollments(session, workshop))
+        if workshop and not (workshop.status == "cancelled" and data.status == "active")
+        else 0
+    )
     if data.capacity is not None and data.capacity < count:
         raise EventError(
             f"La capacité ne peut pas être inférieure aux {count} inscriptions déjà confirmées.",
             errors={"capacity": "Capacité inférieure au nombre d’inscrits."},
-        )
-    if (
-        workshop
-        and workshop.status == "cancelled"
-        and data.status == "active"
-        and session.scalar(
-            select(Enrollment.user_id)
-            .where(Enrollment.workshop_id == workshop.id)
-            .limit(1)
-        )
-    ):
-        raise EventError(
-            "Cet atelier a été utilisé. Sa réactivation nécessite une nouvelle confirmation des participants, prévue au cycle 2.",
-            409,
         )
 
 
@@ -183,7 +173,16 @@ def workshop_revision(session, event, workshops=None):
     ).hexdigest()
 
 
-def preview_workshop(session, event_id, workshop_id, actor_id, data, expected):
+def preview_workshop(
+    session,
+    event_id,
+    workshop_id,
+    actor_id,
+    data,
+    expected,
+    *,
+    reactivate_dependents=False,
+):
     event, workshop = workshop_for(session, event_id, workshop_id, actor_id)
     if expected != workshop_revision(session, event):
         raise EventError(
@@ -195,7 +194,13 @@ def preview_workshop(session, event_id, workshop_id, actor_id, data, expected):
     dependencies = list(
         session.scalars(select(Dependency).where(Dependency.event_id == event_id))
     )
-    plan = plan_change(workshops, dependencies, workshop_id, data)
+    plan = plan_change(
+        workshops,
+        dependencies,
+        workshop_id,
+        data,
+        reactivate_dependents=reactivate_dependents,
+    )
     by_id = {w.id: w for w in workshops}
     for planned in plan.changes:
         try:
@@ -265,6 +270,7 @@ def update_workshop(
     *,
     operation_id=None,
     window=60,
+    reactivate_dependents=False,
 ):
     event, workshop = workshop_for(session, event_id, workshop_id, actor_id)
     operation, fresh = begin_operation(
@@ -275,6 +281,7 @@ def update_workshop(
         {
             **{f: getattr(data, f) for f in FIELDS},
             "workshop_id": workshop_id,
+            "reactivate_dependents": reactivate_dependents,
             "revision": expected,
         },
         now,
@@ -283,7 +290,13 @@ def update_workshop(
     if not fresh:
         return workshop
     _, _, plan = preview_workshop(
-        session, event_id, workshop_id, actor_id, data, expected
+        session,
+        event_id,
+        workshop_id,
+        actor_id,
+        data,
+        expected,
+        reactivate_dependents=reactivate_dependents,
     )
     by_id = {w.id: w for w in workshops_for(session, event_id)}
     changes = []
@@ -305,6 +318,13 @@ def update_workshop(
                     "fields": list(planned.fields),
                 },
             )
+        if planned.before.status == "cancelled" and planned.after.status == "active":
+            for enrollment in session.scalars(
+                select(Enrollment).where(
+                    Enrollment.workshop_id == target.id, Enrollment.status == "active"
+                )
+            ):
+                enrollment.status = "pending_confirmation"
         for field in planned.fields:
             if event.status == "published":
                 change = record_change(
